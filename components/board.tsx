@@ -1,5 +1,6 @@
 "use client";
 import { memo, useState, type CSSProperties } from "react";
+import { usePreferences } from "./preferences";
 import { Flower, Flag, Route } from "lucide-react";
 import {
   COLORS,
@@ -24,6 +25,7 @@ export const Board = memo(function Board({
   showPath,
   onMove,
 }: Props) {
+  const { t } = usePreferences();
   const [hover, setHover] = useState<number | null>(null);
   const n = g.size,
     current = g.players[g.turn],
@@ -57,7 +59,7 @@ export const Board = memo(function Board({
   return (
     <div className={`board-stage ${preview ? "is-preview" : ""}`}>
       <div className="stage-watermark" aria-hidden="true">
-        चौका बारा
+        {t("चौका बारा ")}
       </div>
       <div className="board-surround">
         {g.players.map((p, i) => (
@@ -72,16 +74,18 @@ export const Board = memo(function Board({
             <div>
               <strong>{p.name}</strong>
               <span>
-                {preview
-                  ? COLOR_NAMES[p.color]
-                  : p.resigned
-                    ? "Resigned"
-                    : `${p.pawns.filter((v) => v === playerPath(n, p.color).length - 1).length}/4 home`}
-                {p.bot ? " · Computer" : ""}
+                {t(
+                  preview
+                    ? COLOR_NAMES[p.color]
+                    : p.resigned
+                      ? "Resigned"
+                      : `${p.pawns.filter((v) => v === playerPath(n, p.color).length - 1).length}/4 home`,
+                )}
+                {t(p.bot ? " · Computer" : "")}
               </span>
             </div>
             {!preview && g.turn === i && g.phase === "playing" && (
-              <span className="turn-dot" aria-label="Current turn" />
+              <span className="turn-dot" aria-label={t("Current turn")} />
             )}
           </div>
         ))}
@@ -93,7 +97,7 @@ export const Board = memo(function Board({
           <div
             className="board-grid"
             role="group"
-            aria-label={`${n} by ${n} Chowka Bara board`}
+            aria-label={t(`${n} by ${n} Chowka Bara board`)}
           >
             {Array.from({ length: n * n }, (_, i) => {
               const r = Math.floor(i / n),
@@ -129,7 +133,7 @@ export const Board = memo(function Board({
                     <Flower
                       className="home-flower"
                       strokeWidth={1}
-                      aria-label="Central home"
+                      aria-label={t("Central home")}
                     />
                   )}
                   {start !== null && <span className="start-mark" />}
@@ -140,12 +144,12 @@ export const Board = memo(function Board({
               );
             })}
             {Array.from(stacks.entries()).flatMap(([, tokens]) =>
-              tokens.map((t, stack) => {
-                const p = g.players[t.player],
+              tokens.map((token, stack) => {
+                const p = g.players[token.player],
                   eligible =
-                    t.player === g.turn &&
+                    token.player === g.turn &&
                     canPlay &&
-                    moves.includes(t.pawn) &&
+                    moves.includes(token.pawn) &&
                     !preview;
                 const cols =
                   tokens.length <= 1
@@ -163,20 +167,22 @@ export const Board = memo(function Board({
                   (n === 7 ? 13 : 18);
                 return (
                   <button
-                    key={`${p.id}-${t.pawn}`}
-                    className={`pawn ${eligible ? "movable" : ""} ${t.home ? "arrived" : ""}`}
+                    key={`${p.id}-${token.pawn}`}
+                    className={`pawn ${eligible ? "movable" : ""} ${token.home ? "arrived" : ""}`}
                     disabled={!eligible}
-                    onClick={() => onMove(t.pawn)}
-                    onMouseEnter={() => setHover(t.pawn)}
+                    onClick={() => onMove(token.pawn)}
+                    onMouseEnter={() => setHover(token.pawn)}
                     onMouseLeave={() => setHover(null)}
-                    onFocus={() => setHover(t.pawn)}
+                    onFocus={() => setHover(token.pawn)}
                     onBlur={() => setHover(null)}
-                    aria-label={`${p.name}, pawn ${t.pawn + 1}${eligible ? ", move " + g.roll + " spaces" : ""}`}
+                    aria-label={t(
+                      `${p.name}, pawn ${token.pawn + 1}${eligible ? ", move " + g.roll + " spaces" : ""}`,
+                    )}
                     style={
                       {
                         "--player": COLORS[p.color],
-                        left: `${((t.point[1] + 0.5) / n) * 100}%`,
-                        top: `${((t.point[0] + 0.5) / n) * 100}%`,
+                        left: `${((token.point[1] + 0.5) / n) * 100}%`,
+                        top: `${((token.point[0] + 0.5) / n) * 100}%`,
                         "--dx": `${dx}px`,
                         "--dy": `${dy}px`,
                         "--pawn-size":
@@ -188,7 +194,7 @@ export const Board = memo(function Board({
                       } as CSSProperties
                     }
                   >
-                    <span>{t.pawn + 1}</span>
+                    <span>{token.pawn + 1}</span>
                   </button>
                 );
               }),
@@ -203,19 +209,19 @@ export const Board = memo(function Board({
       </div>
       <div className="board-key">
         <span>
-          <span className="key-cross">×</span> Safe house
+          <span className="key-cross">×</span> {t("Safe house ")}
         </span>
         <span>
-          <Flower size={13} /> The finish
+          <Flower size={13} /> {t("The finish ")}
         </span>
         <span>
-          <Route size={13} /> Spiral inward
+          <Route size={13} /> {t("Spiral inward ")}
         </span>
       </div>
       {g.phase === "finished" && (
         <div className="board-won">
           <Flag size={19} />
-          <span>{g.players[g.winner!].name} wins the courtyard</span>
+          <span>{t(`${g.players[g.winner!].name} wins the courtyard`)}</span>
         </div>
       )}
     </div>

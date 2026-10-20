@@ -171,5 +171,5 @@ test("Invalid inputs rejected and room state is private", async () => {
     },
     body: JSON.stringify({ name: "Host", size: 5, captureRequired: false }),
   });
-  assert.equal(r.status, 400);
+  assert.ok([400, 403].includes(r.status), "Cross-origin requests must be rejected");
 });

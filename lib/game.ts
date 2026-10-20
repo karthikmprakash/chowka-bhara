@@ -88,7 +88,7 @@ export function isSafe(size: BoardSize, [r, c]: Point) {
   return (
     (r === m && (c === 0 || c === m || c === e)) ||
     (c === m && (r === 0 || r === e)) ||
-    ((r === 1 || r === e - 1) && (c === 1 || c === e - 1))
+    (size === 7 && (r === 1 || r === e - 1) && (c === 1 || c === e - 1))
   );
 }
 export function makePlayer(

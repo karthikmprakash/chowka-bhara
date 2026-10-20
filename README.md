@@ -38,7 +38,7 @@ The rules tests cover scoring, safe houses, captures, exact home, capture gates,
 
 The 5×5 board uses four shells, scoring 1, 2, 3, 4, or 8. The 7×7 board uses six, scoring 1–6 or 12. All open or all closed grants a bonus. Pawns begin on the colored home square. Move around the outer perimeter, then follow the alternating inward spiral. The seven-house route revisits its final inner-ring entry before reaching the center, keeping every step orthogonally connected.
 
-A capture resets every rival pawn at the destination to its home square and earns another throw. Nine crossed houses, including the center, are safe. Landing home requires an exact throw and earns a bonus. With no legal move, the throw is skipped; a bonus is retained. First to bring all four pawns home wins.
+A capture resets every rival pawn at the destination to its home square and earns another throw. The 5×5 board has four safe houses at the outer midpoints; its four inner diagonal squares allow captures. The 7×7 board has eight safe houses. The center is the protected finish on both boards. Landing home requires an exact throw and earns a bonus. With no legal move, the throw is skipped; a bonus is retained. First to bring all four pawns home wins.
 
 The optional **Capture to enter** rule requires one capture per player before entering the inner ring. This is a deliberately documented house ruleset: throws resolve individually; pawn pairing, blockades, and three-bonus penalties are excluded. The in-app guide explains every rule. Regional reference: https://rollthedice.in/pages/how-to-play-chowka-bara-7-house.
 
@@ -57,3 +57,7 @@ Hosting uses the Sites plugin's Cloudflare Worker/D1 deployment. `.openai/hostin
 ## Design & accessibility
 
 A quiet courtyard palette, DM Serif Display for the heritage character, DM Sans for controls, and four distinct pawn colors. Responsive board layouts, keyboard access, native focus-trapped dialogs, labeled controls, optional audio, a numbered path, and reduced-motion and reduced-transparency support. Font licenses are included under `public/fonts/`.
+
+## Preferences
+
+Use the moon/sun button in the header for dark or light mode and the Kannada/English button to switch languages. Preferences stay on the current device, independently of other room members. Kannada covers setup, gameplay, rules, dialogs, activity, and errors. The initial theme follows the system preference until explicitly changed.

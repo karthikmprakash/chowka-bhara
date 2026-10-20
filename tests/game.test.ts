@@ -182,3 +182,38 @@ for (const size of [5, 7] as const)
       assert.equal(g.phase, "finished");
       assert.ok(g.players[g.winner!].captures > 0);
     });
+test("Five-house board has exactly four protected starting houses and no inner safe houses", () => {
+  const protectedCells = [];
+  for (let r = 0; r < 5; r++)
+    for (let c = 0; c < 5; c++)
+      if (isSafe(5, [r, c]) && (r !== 2 || c !== 2))
+        protectedCells.push([r, c]);
+  assert.deepEqual(protectedCells, [
+    [0, 2],
+    [2, 0],
+    [2, 4],
+    [4, 2],
+  ]);
+  for (const point of [
+    [1, 1],
+    [1, 3],
+    [3, 1],
+    [3, 3],
+  ] as [number, number][])
+    assert.equal(isSafe(5, point), false);
+  assert.equal(isSafe(5, [2, 2]), true);
+});
+test("Five-house inner diagonal squares allow capture; seven-house inner safe squares remain protected", () => {
+  const g = newGame(5, "local", 2),
+    path = playerPath(5, 0),
+    rival = playerPath(5, 2);
+  const i = path.findIndex(([r, c]) => r === 1 && c === 1),
+    j = rival.findIndex(([r, c]) => r === 1 && c === 1);
+  g.players[0].pawns[0] = i - 1;
+  g.players[1].pawns[0] = j;
+  g.roll = 1;
+  const moved = moveGame(g, 0);
+  assert.equal(moved.players[1].pawns[0], 0);
+  assert.equal(moved.players[0].captures, 1);
+  assert.equal(isSafe(7, [1, 1]), true);
+});

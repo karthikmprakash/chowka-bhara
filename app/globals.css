@@ -2579,3 +2579,345 @@ footer button {
     min-height: 0;
   }
 }
+
+/* Theme and language preferences are local to each visitor. */
+@font-face {
+  font-family: "Noto Kannada";
+  src: url("/fonts/noto-kannada.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Kannada";
+  src: url("/fonts/noto-kannada-semibold.ttf") format("truetype");
+  font-weight: 500 700;
+  font-display: swap;
+}
+.language-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.language-button:hover {
+  background: var(--table);
+}
+.header-actions {
+  gap: 9px;
+}
+.header-note {
+  margin: 0 8px;
+}
+html[lang="kn"] {
+  --sans: "Noto Kannada", "DM Sans", sans-serif;
+  --serif: "Noto Kannada", sans-serif;
+}
+html[lang="kn"] h1,
+html[lang="kn"] h2 {
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.55;
+}
+html[lang="kn"] .page-heading h1 {
+  font-size: 34px;
+  max-width: 740px;
+}
+html[lang="kn"] .panel-title h2,
+html[lang="kn"] .turn-heading h2 {
+  font-size: 25px;
+}
+html[lang="kn"] .brand {
+  font-size: 25px;
+  letter-spacing: 0;
+}
+html[lang="kn"] .brand small {
+  letter-spacing: 0.4px;
+  font-size: 9px;
+}
+html[lang="kn"] .overline,
+html[lang="kn"] .eyebrow,
+html[lang="kn"] .table-toolbar,
+html[lang="kn"] .heritage-stamp {
+  letter-spacing: 0.3px;
+  line-height: 1.9;
+}
+html[lang="kn"] .how-strip small {
+  white-space: normal;
+}
+html[lang="kn"] .seat strong {
+  line-height: 1.7;
+}
+html[lang="kn"] .primary-button {
+  line-height: 1.8;
+}
+html[lang="kn"] .rules-guide li p {
+  line-height: 2;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #15221e;
+  --panel: #1b2b24;
+  --ink: #e6ebdf;
+  --muted: #acb9a7;
+  --line: #3b4c3e;
+  --accent: #e89376;
+  --green: #b2c69b;
+  --table: #23372b;
+}
+html[data-theme="dark"] .table-section {
+  border-color: #3b4d3d;
+}
+html[data-theme="dark"] .table-toolbar,
+html[data-theme="dark"] .table-bottom {
+  border-color: #415440;
+}
+html[data-theme="dark"] .table-status-dot {
+  background: #b2c69b;
+}
+html[data-theme="dark"] .board-label,
+html[data-theme="dark"] .board-key,
+html[data-theme="dark"] .table-bottom,
+html[data-theme="dark"] .seat > div > span,
+html[data-theme="dark"] .board-letters {
+  color: #b2c0a7;
+}
+html[data-theme="dark"] .stage-watermark {
+  color: #80986c;
+  opacity: 0.13;
+}
+html[data-theme="dark"] .board-frame {
+  background: #26392c;
+  border-color: #80926d;
+  box-shadow:
+    0 2px 0 #46573d,
+    0 9px 22px #0003;
+}
+html[data-theme="dark"] .board-frame:before {
+  border-color: #526448;
+}
+html[data-theme="dark"] .board-grid {
+  background: #2b3c2e;
+  border-color: #718064;
+}
+html[data-theme="dark"] .cell {
+  border-color: #718064;
+}
+html[data-theme="dark"] .cell.safe {
+  background: #3a4d34;
+}
+html[data-theme="dark"] .safe-cross:before,
+html[data-theme="dark"] .safe-cross:after {
+  background: #9ca98a;
+}
+html[data-theme="dark"] .cell.home-cell {
+  background: #526348;
+}
+html[data-theme="dark"] .home-flower {
+  color: #bdc9a9;
+}
+html[data-theme="dark"] .cell:has(.start-mark) {
+  background: color-mix(in srgb, var(--start) 28%, #25372a);
+}
+html[data-theme="dark"] .cell.destination {
+  box-shadow: inset 0 0 0 2px #f0b08a9e;
+}
+html[data-theme="dark"] .cell.target {
+  background: #69573c;
+}
+html[data-theme="dark"] .path-step {
+  background: #18271ee8;
+  color: #d2ddbd;
+}
+html[data-theme="dark"] .frame-corner {
+  background: #a8b58e;
+}
+html[data-theme="dark"] .path-button:hover,
+html[data-theme="dark"] .path-button.selected {
+  background: #3a4e33;
+}
+html[data-theme="dark"] .icon-button:hover {
+  background: #324530;
+}
+html[data-theme="dark"] .primary-button,
+html[data-theme="dark"] .rules-board-tabs > button.active,
+html[data-theme="dark"] .players-picker button.active {
+  color: #16271b;
+}
+html[data-theme="dark"] .primary-button:not(:disabled):hover {
+  background: #c5d7b0;
+}
+html[data-theme="dark"] .mode-tabs,
+html[data-theme="dark"] .players-picker > div,
+html[data-theme="dark"] .rules-board-tabs {
+  background: #14231b;
+}
+html[data-theme="dark"] .mode-tabs button {
+  color: #b4c1aa;
+}
+html[data-theme="dark"] .mode-tabs button.active {
+  background: #324832;
+  color: #eff4e5;
+}
+html[data-theme="dark"] .board-option.active {
+  background: #31472f;
+}
+html[data-theme="dark"] .grid-glyph i {
+  border-color: #829572;
+}
+html[data-theme="dark"] .board-option.active .grid-glyph i {
+  border-color: #c1d4aa;
+}
+html[data-theme="dark"] .toggle {
+  background: #55664a;
+}
+html[data-theme="dark"] .toggle.on {
+  background: #b2c69b;
+}
+html[data-theme="dark"] .toggle i {
+  background: #f2f5e9;
+}
+html[data-theme="dark"] .throw-tray {
+  background: #15271d;
+  border-color: #3d503a;
+}
+html[data-theme="dark"] .throw-result span {
+  color: #b6c6a6;
+}
+html[data-theme="dark"] .progress-track {
+  background: #3d5038;
+}
+html[data-theme="dark"] .activity p {
+  color: #a2b297;
+}
+html[data-theme="dark"] .activity p.latest {
+  color: #dce7cf;
+}
+html[data-theme="dark"] .room-code-box,
+html[data-theme="dark"] .waiting-host {
+  background: #263d29;
+  border-color: #71855d;
+}
+html[data-theme="dark"] .lobby-seats > div {
+  border-color: #43563b;
+  color: #b2bfa4;
+}
+html[data-theme="dark"] .lobby-seats > div.filled {
+  color: var(--ink);
+}
+html[data-theme="dark"] .empty-avatar,
+html[data-theme="dark"] .lobby-seats small {
+  background: #30462e;
+  color: #c0ccaf;
+}
+html[data-theme="dark"] .room-code-box button,
+html[data-theme="dark"] .connection-status {
+  color: #bbcca7;
+}
+html[data-theme="dark"] .error-message {
+  background: #4c2d25;
+  border-color: #89543f;
+  color: #ffc8ae;
+}
+html[data-theme="dark"] .modal {
+  border-color: #5d7050;
+  box-shadow: 0 20px 100px #0007;
+}
+html[data-theme="dark"] .modal::backdrop {
+  background: #08110cc4;
+}
+html[data-theme="dark"] .rules-note {
+  color: #c4d3b2;
+}
+html[data-theme="dark"] .about-content p {
+  color: #bac7af;
+}
+html[data-theme="dark"] .winner-medallion {
+  background: #354b2d;
+  border-color: #7a9161;
+  outline-color: #536b43;
+  color: #d2dfbc;
+}
+html[data-theme="dark"] .toast,
+html[data-theme="dark"] .board-won {
+  background: #b2c69b;
+  color: #16271b;
+  border-color: #cbdab5;
+}
+html[data-theme="dark"] .header-note,
+html[data-theme="dark"] .heritage-stamp,
+html[data-theme="dark"] footer,
+html[data-theme="dark"] footer button {
+  color: #a9b99b;
+}
+html[data-theme="dark"] .mobile-turn-bar {
+  background: #1b2b24f5;
+  border-color: #536749;
+}
+html[data-theme="dark"] .mobile-pawns button {
+  background: #30442b;
+}
+html[data-theme="dark"] .keyboard-hint {
+  color: #3b5332;
+  border-color: #526d3e;
+}
+@media (max-width: 1100px) {
+  .header-note {
+    display: none;
+  }
+}
+@media (max-width: 480px) {
+  .site-header nav {
+    display: none;
+  }
+  .header-actions {
+    margin-left: auto;
+    gap: 6px;
+  }
+  .language-button {
+    padding: 4px 7px;
+    font-size: 10px;
+  }
+  .site-header {
+    gap: 8px;
+  }
+  .brand {
+    font-size: 20px;
+  }
+  .brand-symbol {
+    width: 25px;
+    height: 25px;
+  }
+  .header-actions .icon-button {
+    width: 29px;
+    height: 29px;
+  }
+  .brand small {
+    font-size: 5.7px;
+    letter-spacing: 1.4px;
+  }
+  html[lang="kn"] .brand {
+    font-size: 21px;
+  }
+  html[lang="kn"] .brand small {
+    font-size: 7px;
+  }
+  html[lang="kn"] .page-heading h1 {
+    font-size: 28px;
+  }
+  html[lang="kn"] .board-key {
+    gap: 12px;
+  }
+  html[lang="kn"] .how-strip strong {
+    font-size: 10px;
+  }
+  html[lang="kn"] .how-strip small {
+    font-size: 8px;
+    max-width: 130px;
+  }
+}

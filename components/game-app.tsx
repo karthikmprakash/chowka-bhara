@@ -33,8 +33,12 @@ import {
   Loader2,
   DoorOpen,
   Sparkles,
+  Moon,
+  Sun,
+  Languages,
 } from "lucide-react";
 import { Board } from "./board";
+import { PreferencesProvider, usePreferences } from "./preferences";
 import {
   COLORS,
   newGame,
@@ -85,14 +89,15 @@ function Cowries({
   shells: boolean[];
   rolling: boolean;
 }) {
+  const { t } = usePreferences();
   return (
     <div
       className={`cowries ${rolling ? "throwing" : ""}`}
-      aria-label={
+      aria-label={t(
         shells.length
           ? `${shells.filter(Boolean).length} shells face up`
-          : `${count} cowrie shells`
-      }
+          : `${count} cowrie shells`,
+      )}
     >
       {Array.from({ length: count }, (_, i) => (
         <span
@@ -112,6 +117,14 @@ function Cowries({
   );
 }
 export default function GameApp() {
+  return (
+    <PreferencesProvider>
+      <GameScreen />
+    </PreferencesProvider>
+  );
+}
+function GameScreen() {
+  const { t, language, setLanguage, theme, setTheme } = usePreferences();
   const [size, setSize] = useState<BoardSize>(5),
     [mode, setMode] = useState<Mode>("online"),
     [count, setCount] = useState(2),
@@ -518,7 +531,7 @@ export default function GameApp() {
             if (game) setModal("leave");
             else clearTable();
           }}
-          aria-label="Chowka Bara home"
+          aria-label={t("Chowka Bara home")}
         >
           <span className="brand-symbol">
             <i />
@@ -527,38 +540,78 @@ export default function GameApp() {
             <i />
           </span>
           <span>
-            chowka bara<span className="brand-period">.</span>
-            <small>THE INDIAN GAME TABLE</small>
+            {t("chowka bara")}
+            <span className="brand-period">.</span>
+            <small>{t("THE INDIAN GAME TABLE")}</small>
           </span>
         </a>
-        <nav aria-label="Main navigation">
+        <nav aria-label={t("Main navigation")}>
           <button
             className="nav-link nav-active"
             onClick={() => {
               if (game) setModal("leave");
             }}
           >
-            The game <span>01</span>
+            {t("The game ")}
+            <span>01</span>
           </button>
           <button className="nav-link" onClick={() => setModal("rules")}>
-            How to play <ArrowUpRight size={14} />
+            {t("How to play ")}
+            <ArrowUpRight size={14} />
           </button>
           <button
             className="nav-link about-link"
             onClick={() => setModal("about")}
           >
-            Our roots <ArrowUpRight size={14} />
+            {t("Our roots ")}
+            <ArrowUpRight size={14} />
           </button>
         </nav>
         <div className="header-actions">
+          <button
+            className="language-button"
+            onClick={() => setLanguage(language === "en" ? "kn" : "en")}
+            aria-label={
+              language === "en" ? "ಕನ್ನಡಕ್ಕೆ ಬದಲಿಸಿ" : "Switch to English"
+            }
+            title={language === "en" ? "ಕನ್ನಡಕ್ಕೆ ಬದಲಿಸಿ" : "Switch to English"}
+          >
+            <Languages size={16} />
+            <span>{language === "en" ? "ಕನ್ನಡ" : "English"}</span>
+          </button>
+          <button
+            className="icon-button theme-button"
+            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            aria-label={
+              language === "kn"
+                ? theme === "light"
+                  ? "ಕತ್ತಲೆ ವಿನ್ಯಾಸ ಬಳಸಿ"
+                  : "ಬೆಳಕಿನ ವಿನ್ಯಾಸ ಬಳಸಿ"
+                : theme === "light"
+                  ? "Switch to dark mode"
+                  : "Switch to light mode"
+            }
+            title={
+              language === "kn"
+                ? theme === "light"
+                  ? "ಕತ್ತಲೆ ವಿನ್ಯಾಸ"
+                  : "ಬೆಳಕಿನ ವಿನ್ಯಾಸ"
+                : theme === "light"
+                  ? "Dark mode"
+                  : "Light mode"
+            }
+            aria-pressed={theme === "dark"}
+          >
+            {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
+          </button>
           <span className="header-note">
-            <i /> Made for togetherness
+            <i /> {t("Made for togetherness ")}
           </span>
           <button
             className="icon-button"
             onClick={() => setSound(!sound)}
-            aria-label={sound ? "Mute sound" : "Enable sound"}
-            title={sound ? "Mute sound" : "Enable sound"}
+            aria-label={t(sound ? "Mute sound" : "Enable sound")}
+            title={t(sound ? "Mute sound" : "Enable sound")}
           >
             {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
@@ -568,42 +621,49 @@ export default function GameApp() {
         <section className="page-heading">
           <div>
             <div className="eyebrow">
-              <span className="tiny-star">✳</span> A CLASSIC, BACK AT THE TABLE
+              <span className="tiny-star">✳</span>{" "}
+              {t("A CLASSIC, BACK AT THE TABLE ")}
             </div>
-            <h1>{title}</h1>
+            <h1>{t(title)}</h1>
             <p>
-              {!game
-                ? "A handful of shells. Four little pawns. Endless reasons to play again."
-                : game.phase === "lobby"
-                  ? "Pull up a chair. Invite your people. The courtyard is yours."
-                  : game.phase === "finished"
-                    ? "A little luck, a little strategy. Ready for another round?"
-                    : `${game.size} × ${game.size} ${game.size === 5 ? "Classic" : "Grand"} · ${game.captureRequired ? "Capture to enter" : "Friendly race"} · ${game.mode === "online" ? "Online table" : game.mode === "solo" ? "Practice with the computer" : "Pass & play"}`}
+              {t(
+                !game
+                  ? "A handful of shells. Four little pawns. Endless reasons to play again."
+                  : game.phase === "lobby"
+                    ? "Pull up a chair. Invite your people. The courtyard is yours."
+                    : game.phase === "finished"
+                      ? "A little luck, a little strategy. Ready for another round?"
+                      : `${game.size} × ${game.size} ${game.size === 5 ? "Classic" : "Grand"} · ${game.captureRequired ? "Capture to enter" : "Friendly race"} · ${game.mode === "online" ? "Online table" : game.mode === "solo" ? "Practice with the computer" : "Pass & play"}`,
+              )}
             </p>
           </div>
           <div className="heritage-stamp">
             <Flower size={24} strokeWidth={1} />
             <span>
-              ROOTED IN INDIA
+              {t("ROOTED IN INDIA ")}
               <br />
-              OPEN TO EVERYONE
+              {t("OPEN TO EVERYONE ")}
             </span>
           </div>
         </section>
         <div className="game-layout">
-          <section className="table-section" aria-label="Game table">
+          <section className="table-section" aria-label={t("Game table")}>
             <div className="table-toolbar">
               <div>
-                <span className="table-status-dot" />{" "}
-                {game?.phase === "lobby"
-                  ? "YOUR PRIVATE TABLE"
-                  : game
-                    ? "THE GAME IS ON"
-                    : "THE COURTYARD"}
+                <span className="table-status-dot" />
+                {t(" ")}
+                {t(
+                  game?.phase === "lobby"
+                    ? "YOUR PRIVATE TABLE"
+                    : game
+                      ? "THE GAME IS ON"
+                      : "THE COURTYARD",
+                )}
                 <span className="toolbar-separator">/</span>
                 <span className="board-label">
-                  {boardGame.size} × {boardGame.size}{" "}
-                  {boardGame.size === 5 ? "CLASSIC" : "GRAND"}
+                  {boardGame.size} × {boardGame.size}
+                  {t(" ")}
+                  {t(boardGame.size === 5 ? "CLASSIC" : "GRAND")}
                 </span>
               </div>
               <button
@@ -612,7 +672,7 @@ export default function GameApp() {
                 aria-pressed={showPath}
               >
                 <Route size={14} />
-                <span>{showPath ? "Hide path" : "Show path"}</span>
+                <span>{t(showPath ? "Hide path" : "Show path")}</span>
               </button>
             </div>
             <Board
@@ -625,14 +685,18 @@ export default function GameApp() {
             <div className="table-bottom">
               <span className="small-flower">✳</span>
               <span>
-                {!game
-                  ? "Where a familiar game finds a new home."
-                  : game.lastAction}
+                {t(
+                  !game
+                    ? "Where a familiar game finds a new home."
+                    : game.lastAction,
+                )}
               </span>
               <span className="table-bottom-number">
-                {game
-                  ? `MOVE ${String(game.revision).padStart(2, "0")}`
-                  : "EST. IN TRADITION"}
+                {t(
+                  game
+                    ? `MOVE ${String(game.revision).padStart(2, "0")}`
+                    : "EST. IN TRADITION",
+                )}
               </span>
             </div>
           </section>
@@ -640,14 +704,14 @@ export default function GameApp() {
             {!game ? (
               <>
                 <div className="panel-title">
-                  <span className="overline">A SEAT FOR EVERYONE</span>
-                  <h2>Play your way.</h2>
-                  <p>Your people, your board, your next game.</p>
+                  <span className="overline">{t("A SEAT FOR EVERYONE")}</span>
+                  <h2>{t("Play your way.")}</h2>
+                  <p>{t("Your people, your board, your next game.")}</p>
                 </div>
                 <div
                   className="mode-tabs"
                   role="tablist"
-                  aria-label="Game mode"
+                  aria-label={t("Game mode")}
                 >
                   {(
                     [
@@ -667,19 +731,21 @@ export default function GameApp() {
                       className={mode === m.key ? "active" : ""}
                     >
                       <m.icon size={17} />
-                      {m.label}
+                      {t(m.label)}
                     </button>
                   ))}
                 </div>
                 <p className="mode-description">
-                  {mode === "online"
-                    ? "Different places. The same table."
-                    : mode === "local"
-                      ? "One screen. Everyone around the table."
-                      : "Find your rhythm against the computer."}
+                  {t(
+                    mode === "online"
+                      ? "Different places. The same table."
+                      : mode === "local"
+                        ? "One screen. Everyone around the table."
+                        : "Find your rhythm against the computer.",
+                  )}
                 </p>
                 <div className="setting-heading">
-                  <label>Choose your board</label>
+                  <label>{t("Choose your board")}</label>
                   <span>01</span>
                 </div>
                 <div className="board-options">
@@ -695,7 +761,9 @@ export default function GameApp() {
                         <strong>
                           {n} × {n}
                         </strong>
-                        <small>{n === 5 ? "The classic" : "The grand"}</small>
+                        <small>
+                          {t(n === 5 ? "The classic" : "The grand")}
+                        </small>
                       </span>
                       <span className="radio-dot" />
                     </button>
@@ -704,29 +772,31 @@ export default function GameApp() {
                 <div className="settings-row">
                   <div>
                     <label htmlFor="player-name">
-                      {mode === "local" ? "First player’s name" : "Your name"}
+                      {t(
+                        mode === "local" ? "First player’s name" : "Your name",
+                      )}
                     </label>
                     <input
                       id="player-name"
                       autoComplete="nickname"
                       maxLength={20}
-                      placeholder={
-                        mode === "online" ? "What should we call you?" : "You"
-                      }
+                      placeholder={t(
+                        mode === "online" ? "What should we call you?" : "You",
+                      )}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                     />
                   </div>
                   {mode !== "online" && (
                     <div className="players-picker">
-                      <label>Players</label>
+                      <label>{t("Players")}</label>
                       <div>
                         {[2, 3, 4].map((v) => (
                           <button
                             key={v}
                             className={count === v ? "active" : ""}
                             onClick={() => setCount(v)}
-                            aria-label={`${v} players`}
+                            aria-label={t(`${v} players`)}
                             aria-pressed={count === v}
                           >
                             {v}
@@ -743,11 +813,13 @@ export default function GameApp() {
                   onClick={() => setCapture(!capture)}
                 >
                   <div>
-                    <span>Capture to enter</span>
+                    <span>{t("Capture to enter")}</span>
                     <small>
-                      {capture
-                        ? "Make a capture to enter the inner ring."
-                        : "A relaxed race. Perfect for a first game."}
+                      {t(
+                        capture
+                          ? "Make a capture to enter the inner ring."
+                          : "A relaxed race. Perfect for a first game.",
+                      )}
                     </small>
                   </div>
                   <span className={`toggle ${capture ? "on" : ""}`}>
@@ -756,7 +828,7 @@ export default function GameApp() {
                 </button>
                 {error && (
                   <p className="error-message" role="alert">
-                    {error}
+                    {t(error)}
                   </p>
                 )}
                 <button
@@ -772,13 +844,15 @@ export default function GameApp() {
                     <ArrowRight size={18} />
                   )}
                   <span>
-                    {busy
-                      ? "Opening your table…"
-                      : mode === "online"
-                        ? "Create a room"
-                        : mode === "local"
-                          ? "Gather & play"
-                          : "Let’s play"}
+                    {t(
+                      busy
+                        ? "Opening your table…"
+                        : mode === "online"
+                          ? "Create a room"
+                          : mode === "local"
+                            ? "Gather & play"
+                            : "Let’s play",
+                    )}
                   </span>
                   {!busy && <ArrowUpRight size={18} />}
                 </button>
@@ -790,20 +864,24 @@ export default function GameApp() {
                       setError("");
                     }}
                   >
-                    Have a room code?{" "}
+                    {t("Have a room code?")}
+                    {t(" ")}
                     <strong>
-                      Join a table <ArrowRight size={13} />
+                      {t("Join a table ")}
+                      <ArrowRight size={13} />
                     </strong>
                   </button>
                 ) : (
                   <p className="panel-footnote">
-                    {mode === "solo"
-                      ? "You + " +
-                        (count - 1) +
-                        " computer opponent" +
-                        (count > 2 ? "s" : "") +
-                        " · No account needed"
-                      : "2–4 players · Pass the device each turn"}
+                    {t(
+                      mode === "solo"
+                        ? "You + " +
+                            (count - 1) +
+                            " computer opponent" +
+                            (count > 2 ? "s" : "") +
+                            " · No account needed"
+                        : "2–4 players · Pass the device each turn",
+                    )}
                   </p>
                 )}
                 {resume && (
@@ -814,7 +892,8 @@ export default function GameApp() {
                       setResume(null);
                     }}
                   >
-                    <RotateCcw size={14} /> Continue your last game{" "}
+                    <RotateCcw size={14} /> {t("Continue your last game")}
+                    {t(" ")}
                     <ChevronRight size={14} />
                   </button>
                 )}
@@ -822,20 +901,21 @@ export default function GameApp() {
             ) : game.phase === "lobby" ? (
               <>
                 <div className="panel-title">
-                  <span className="overline">THE MORE, THE MERRIER</span>
-                  <h2>Your table is open.</h2>
-                  <p>Share the code. Make room for a rivalry.</p>
+                  <span className="overline">{t("THE MORE, THE MERRIER")}</span>
+                  <h2>{t("Your table is open.")}</h2>
+                  <p>{t("Share the code. Make room for a rivalry.")}</p>
                 </div>
                 <div className="room-code-box">
-                  <span>ROOM CODE</span>
+                  <span>{t("ROOM CODE")}</span>
                   <strong>{session?.code}</strong>
                   <button onClick={copyInvite}>
-                    {copied ? <Check size={16} /> : <Copy size={16} />}{" "}
-                    {copied ? "Copied" : "Copy invite link"}
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    {t(" ")}
+                    {t(copied ? "Copied" : "Copy invite link")}
                   </button>
                 </div>
                 <div className="setting-heading">
-                  <label>At the table</label>
+                  <label>{t("At the table")}</label>
                   <span>{game.players.length}/4</span>
                 </div>
                 <div className="lobby-seats">
@@ -853,16 +933,16 @@ export default function GameApp() {
                             </span>
                             <strong>
                               {p.name}
-                              {p.id === session?.playerId ? " (you)" : ""}
+                              {t(p.id === session?.playerId ? " (you)" : "")}
                             </strong>
-                            <small>{i === 0 ? "Host" : "Joined"}</small>
+                            <small>{t(i === 0 ? "Host" : "Joined")}</small>
                           </>
                         ) : (
                           <>
                             <span className="empty-avatar">
                               <Users size={16} />
                             </span>
-                            <span>A seat for a friend</span>
+                            <span>{t("A seat for a friend")}</span>
                             <span className="waiting-dots">···</span>
                           </>
                         )}
@@ -872,7 +952,7 @@ export default function GameApp() {
                 </div>
                 {error && (
                   <p className="error-message" role="alert">
-                    {error}
+                    {t(error)}
                   </p>
                 )}
                 {me === 0 ? (
@@ -882,9 +962,11 @@ export default function GameApp() {
                     onClick={() => void onlineAction("start")}
                   >
                     <span>
-                      {game.players.length < 2
-                        ? "Waiting for a friend…"
-                        : "Start the game"}
+                      {t(
+                        game.players.length < 2
+                          ? "Waiting for a friend…"
+                          : "Start the game",
+                      )}
                     </span>
                     {busy ? (
                       <Loader2 size={18} className="spinner" />
@@ -894,19 +976,22 @@ export default function GameApp() {
                   </button>
                 ) : (
                   <div className="waiting-host">
-                    <Loader2 className="spinner" size={16} /> Your host will
-                    start the game.
+                    <Loader2 className="spinner" size={16} />{" "}
+                    {t("Your host will start the game. ")}
                   </div>
                 )}
                 <p className="panel-footnote">
-                  2–4 players · {game.size} × {game.size} ·{" "}
-                  {game.captureRequired ? "Capture to enter" : "Friendly race"}
+                  {t("2–4 players · ")}
+                  {game.size} × {game.size} ·{t(" ")}
+                  {t(
+                    game.captureRequired ? "Capture to enter" : "Friendly race",
+                  )}
                 </p>
                 <button
                   className="subtle-button"
                   onClick={() => setModal("leave")}
                 >
-                  <DoorOpen size={14} /> Leave table
+                  <DoorOpen size={14} /> {t("Leave table ")}
                 </button>
               </>
             ) : game.phase === "finished" ? (
@@ -915,9 +1000,11 @@ export default function GameApp() {
                   <Flag size={34} strokeWidth={1.3} />
                 </div>
                 <div className="panel-title winner-title">
-                  <span className="overline">THE COURTYARD CHAMPION</span>
+                  <span className="overline">
+                    {t("THE COURTYARD CHAMPION")}
+                  </span>
                   <h2>{game.players[game.winner!].name}</h2>
-                  <p>All roads led home. This one led to victory.</p>
+                  <p>{t("All roads led home. This one led to victory.")}</p>
                 </div>
                 <div className="finish-results">
                   {game.players.map((p, i) => (
@@ -928,11 +1015,13 @@ export default function GameApp() {
                       />
                       <strong>{p.name}</strong>
                       <span>
-                        {i === game.winner
-                          ? "Winner"
-                          : p.resigned
-                            ? "Resigned"
-                            : `${p.pawns.filter((v) => v === playerPath(game.size, p.color).length - 1).length}/4 home`}
+                        {t(
+                          i === game.winner
+                            ? "Winner"
+                            : p.resigned
+                              ? "Resigned"
+                              : `${p.pawns.filter((v) => v === playerPath(game.size, p.color).length - 1).length}/4 home`,
+                        )}
                       </span>
                     </div>
                   ))}
@@ -944,27 +1033,30 @@ export default function GameApp() {
                     disabled={busy}
                   >
                     <RotateCcw size={17} />
-                    <span>One more round</span>
+                    <span>{t("One more round")}</span>
                     <ArrowRight size={17} />
                   </button>
                 ) : (
                   <p className="panel-footnote">
-                    Your host can open a rematch.
+                    {t("Your host can open a rematch. ")}
                   </p>
                 )}
                 <button className="subtle-button" onClick={clearTable}>
-                  Back to the courtyard <ArrowUpRight size={14} />
+                  {t("Back to the courtyard ")}
+                  <ArrowUpRight size={14} />
                 </button>
               </>
             ) : (
               <>
                 <div className="turn-heading">
                   <span className="overline">
-                    {myTurn
-                      ? "YOUR MOMENT"
-                      : game.players[game.turn].bot
-                        ? "THINKING IT THROUGH"
-                        : "ACROSS THE TABLE"}
+                    {t(
+                      myTurn
+                        ? "YOUR MOMENT"
+                        : game.players[game.turn].bot
+                          ? "THINKING IT THROUGH"
+                          : "ACROSS THE TABLE",
+                    )}
                   </span>
                   <h2>
                     <span
@@ -973,24 +1065,28 @@ export default function GameApp() {
                         background: COLORS[game.players[game.turn].color],
                       }}
                     />
-                    {myTurn
-                      ? game.mode === "local"
-                        ? `${game.players[game.turn].name}’s turn`
-                        : "Your move."
-                      : `${game.players[game.turn].name}’s turn`}
+                    {t(
+                      myTurn
+                        ? game.mode === "local"
+                          ? `${game.players[game.turn].name}’s turn`
+                          : "Your move."
+                        : `${game.players[game.turn].name}’s turn`,
+                    )}
                   </h2>
                   <p>
-                    {rolling
-                      ? "A little luck is on its way…"
-                      : game.roll !== null
-                        ? myTurn
-                          ? "Choose a glowing pawn to move."
-                          : "Choosing a pawn to move…"
-                        : game.bonus
-                          ? "A bonus throw. Make it count."
-                          : myTurn
-                            ? "Give the cowries a throw."
-                            : "Waiting for their next throw."}
+                    {t(
+                      rolling
+                        ? "A little luck is on its way…"
+                        : game.roll !== null
+                          ? myTurn
+                            ? "Choose a glowing pawn to move."
+                            : "Choosing a pawn to move…"
+                          : game.bonus
+                            ? "A bonus throw. Make it count."
+                            : myTurn
+                              ? "Give the cowries a throw."
+                              : "Waiting for their next throw.",
+                    )}
                   </p>
                 </div>
                 <div className="throw-tray">
@@ -1001,19 +1097,27 @@ export default function GameApp() {
                   />
                   <div className="throw-result">
                     {rolling ? (
-                      <span className="result-wait">TOSSING THE COWRIES</span>
+                      <span className="result-wait">
+                        {t("TOSSING THE COWRIES")}
+                      </span>
                     ) : game.roll !== null ? (
                       <>
                         <strong>{game.roll}</strong>
                         <span>
-                          {game.bonus ? "BONUS THROW EARNED" : "SPACES TO MOVE"}
+                          {t(
+                            game.bonus
+                              ? "BONUS THROW EARNED"
+                              : "SPACES TO MOVE",
+                          )}
                         </span>
                       </>
                     ) : (
                       <span className="result-wait">
-                        {game.shells.length
-                          ? `LAST THROW · ${game.shells.filter(Boolean).length || shellCount(game.size) * 2}`
-                          : `${shellCount(game.size)} COWRIES · COUNTLESS POSSIBILITIES`}
+                        {t(
+                          game.shells.length
+                            ? `LAST THROW · ${game.shells.filter(Boolean).length || shellCount(game.size) * 2}`
+                            : `${shellCount(game.size)} COWRIES · COUNTLESS POSSIBILITIES`,
+                        )}
                       </span>
                     )}
                   </div>
@@ -1025,13 +1129,15 @@ export default function GameApp() {
                 >
                   <Sparkles size={18} />
                   <span>
-                    {rolling
-                      ? "Shells in the air…"
-                      : game.roll !== null
-                        ? "Choose your pawn"
-                        : myTurn
-                          ? "Throw the cowries"
-                          : "Their turn to throw"}
+                    {t(
+                      rolling
+                        ? "Shells in the air…"
+                        : game.roll !== null
+                          ? "Choose your pawn"
+                          : myTurn
+                            ? "Throw the cowries"
+                            : "Their turn to throw",
+                    )}
                   </span>
                   {!rolling && game.roll === null && (
                     <span className="keyboard-hint">↵</span>
@@ -1052,7 +1158,8 @@ export default function GameApp() {
                         >
                           {p + 1}
                         </span>
-                        Pawn {p + 1}
+                        {t("Pawn ")}
+                        {p + 1}
                         <ArrowRight size={12} />
                       </button>
                     ))}
@@ -1060,12 +1167,12 @@ export default function GameApp() {
                 )}
                 {error && (
                   <p className="error-message" role="alert">
-                    {error}
+                    {t(error)}
                   </p>
                 )}
                 <div className="game-progress">
                   <div className="setting-heading">
-                    <label>The race home</label>
+                    <label>{t("The race home")}</label>
                     <span>
                       <Flag size={13} />
                     </span>
@@ -1084,12 +1191,14 @@ export default function GameApp() {
                           />
                           <strong>
                             {p.name}
-                            {p.id === session?.playerId ? " (you)" : ""}
+                            {t(p.id === session?.playerId ? " (you)" : "")}
                           </strong>
                           <small>
-                            {p.resigned
-                              ? "Resigned"
-                              : `${p.pawns.filter((v) => v === end).length}/4`}
+                            {t(
+                              p.resigned
+                                ? "Resigned"
+                                : `${p.pawns.filter((v) => v === end).length}/4`,
+                            )}
                           </small>
                         </div>
                         <div className="progress-track">
@@ -1105,7 +1214,7 @@ export default function GameApp() {
                   })}
                 </div>
                 <div className="activity">
-                  <span className="overline">AROUND THE TABLE</span>
+                  <span className="overline">{t("AROUND THE TABLE")}</span>
                   <div aria-live="polite">
                     {game.logs
                       .slice(-3)
@@ -1121,22 +1230,22 @@ export default function GameApp() {
                                 COLORS[game.players[l.player]?.color || 0],
                             }}
                           />
-                          {l.text}
+                          {t(l.text)}
                         </p>
                       ))}
                   </div>
                 </div>
                 <div className="playing-actions">
                   <button onClick={() => setModal("rules")}>
-                    <CircleHelp size={14} /> Rules
+                    <CircleHelp size={14} /> {t("Rules ")}
                   </button>
                   {session && (
                     <button onClick={copyInvite}>
-                      <Link2 size={14} /> Invite
+                      <Link2 size={14} /> {t("Invite ")}
                     </button>
                   )}
                   <button onClick={() => setModal("leave")}>
-                    <DoorOpen size={14} /> Leave
+                    <DoorOpen size={14} /> {t("Leave ")}
                   </button>
                 </div>
               </>
@@ -1145,54 +1254,61 @@ export default function GameApp() {
               <div
                 className={`connection-status ${!connected ? "offline" : ""}`}
               >
-                {connected ? <Wifi size={12} /> : <WifiOff size={12} />}{" "}
-                {connected
-                  ? "Connected to your table"
-                  : "Reconnecting automatically…"}
+                {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
+                {t(" ")}
+                {t(
+                  connected
+                    ? "Connected to your table"
+                    : "Reconnecting automatically…",
+                )}
                 <span>{session.code}</span>
               </div>
             )}
           </aside>
         </div>
-        <section className="how-strip" aria-label="The game in three steps">
+        <section
+          className="how-strip"
+          aria-label={t("The game in three steps")}
+        >
           <div className="how-intro">
             <span className="small-flower">✳</span>
             <span>
-              Simple to learn.
+              {t("Simple to learn. ")}
               <br />
-              <strong>Hard to leave.</strong>
+              <strong>{t("Hard to leave.")}</strong>
             </span>
           </div>
           <button onClick={() => setModal("rules")}>
             <span className="step-number">01</span>
             <span>
-              <strong>Throw a little luck.</strong>
-              <small>Toss the cowries. Find your number.</small>
+              <strong>{t("Throw a little luck.")}</strong>
+              <small>{t("Toss the cowries. Find your number.")}</small>
             </span>
             <ArrowUpRight size={16} />
           </button>
           <button onClick={() => setModal("rules")}>
             <span className="step-number">02</span>
             <span>
-              <strong>Make your move.</strong>
-              <small>Race, capture, and take the safe road.</small>
+              <strong>{t("Make your move.")}</strong>
+              <small>{t("Race, capture, and take the safe road.")}</small>
             </span>
             <ArrowUpRight size={16} />
           </button>
           <button onClick={() => setModal("rules")}>
             <span className="step-number">03</span>
             <span>
-              <strong>Bring it all home.</strong>
-              <small>Four pawns. One center. Your victory.</small>
+              <strong>{t("Bring it all home.")}</strong>
+              <small>{t("Four pawns. One center. Your victory.")}</small>
             </span>
             <ArrowUpRight size={16} />
           </button>
         </section>
       </main>
       <footer>
-        <span>From Indian courtyards to wherever you are.</span>
+        <span>{t("From Indian courtyards to wherever you are.")}</span>
         <button onClick={() => setModal("about")}>
-          Tradition, with a new connection. <ArrowUpRight size={12} />
+          {t("Tradition, with a new connection. ")}
+          <ArrowUpRight size={12} />
         </button>
         <span className="footer-word">
           ಆಡೋಣ ಬನ್ನಿ <Flower size={14} />
@@ -1201,7 +1317,7 @@ export default function GameApp() {
       {notice && (
         <div className="toast" role="status">
           <CheckCircle2 size={17} />
-          {notice}
+          {t(notice)}
         </div>
       )}
       {modal && (
@@ -1210,23 +1326,25 @@ export default function GameApp() {
             setModal(null);
             setError("");
           }}
-          title={
+          title={t(
             modal === "rules"
               ? "A small guide to a great game."
               : modal === "join"
                 ? "There’s a seat for you."
                 : modal === "leave"
                   ? "Step away from the table?"
-                  : "Old roots. New connections."
-          }
+                  : "Old roots. New connections.",
+          )}
         >
           {modal === "join" ? (
             <form onSubmit={join}>
               <p className="modal-lead">
-                A familiar name and a six-character code. That’s all you need.
+                {t(
+                  "A familiar name and a six-character code. That’s all you need. ",
+                )}
               </p>
               <label className="field-label" htmlFor="join-name">
-                Your name
+                {t("Your name ")}
               </label>
               <input
                 id="join-name"
@@ -1235,10 +1353,10 @@ export default function GameApp() {
                 autoComplete="nickname"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="What should we call you?"
+                placeholder={t("What should we call you?")}
               />
               <label className="field-label" htmlFor="room-code">
-                Room code
+                {t("Room code ")}
               </label>
               <input
                 id="room-code"
@@ -1255,11 +1373,11 @@ export default function GameApp() {
                     e.target.value.toUpperCase().replace(/[^A-Z2-9]/g, ""),
                   )
                 }
-                placeholder="ABC234"
+                placeholder={t("ABC234")}
               />
               {error && (
                 <p className="error-message" role="alert">
-                  {error}
+                  {t(error)}
                 </p>
               )}
               <button type="submit" className="primary-button" disabled={busy}>
@@ -1268,25 +1386,29 @@ export default function GameApp() {
                 ) : (
                   <Users size={18} />
                 )}
-                <span>{busy ? "Finding your table…" : "Join the table"}</span>
+                <span>
+                  {t(busy ? "Finding your table…" : "Join the table")}
+                </span>
                 <ArrowRight size={17} />
               </button>
             </form>
           ) : modal === "leave" ? (
             <>
               <p className="modal-lead">
-                {session && game?.phase === "playing"
-                  ? "Leaving resigns your seat in this game. Your friends can keep playing."
-                  : session
-                    ? "You’ll leave this room. The next player becomes host if you opened it."
-                    : "Your local game is saved automatically. You can continue it from the courtyard."}
+                {t(
+                  session && game?.phase === "playing"
+                    ? "Leaving resigns your seat in this game. Your friends can keep playing."
+                    : session
+                      ? "You’ll leave this room. The next player becomes host if you opened it."
+                      : "Your local game is saved automatically. You can continue it from the courtyard.",
+                )}
               </p>
               <div className="dialog-actions">
                 <button
                   className="secondary-button"
                   onClick={() => setModal(null)}
                 >
-                  Stay & play
+                  {t("Stay & play ")}
                 </button>
                 <button
                   className="primary-button"
@@ -1299,12 +1421,13 @@ export default function GameApp() {
                     } else void leave();
                   }}
                 >
-                  Leave table <ArrowRight size={16} />
+                  {t("Leave table ")}
+                  <ArrowRight size={16} />
                 </button>
               </div>
               {error && (
                 <p className="error-message" role="alert">
-                  {error}
+                  {t(error)}
                 </p>
               )}
             </>
@@ -1312,30 +1435,32 @@ export default function GameApp() {
             <div className="about-content">
               <Flower size={58} strokeWidth={0.8} />
               <p>
-                Before screens, there were courtyards. A board drawn on the
-                floor, a handful of cowries, and a few people who always had
-                time for one more game.
+                {t(
+                  "Before screens, there were courtyards. A board drawn on the floor, a handful of cowries, and a few people who always had time for one more game. ",
+                )}
               </p>
               <p>
-                Chowka Bara carries that spirit from Karnataka. Related
-                traditions are known as Ashta Chamma, Katte Mane, and other
-                names across India. Each family brings its own little rules.
+                {t(
+                  "Chowka Bara carries that spirit from Karnataka. Related traditions are known as Ashta Chamma, Katte Mane, and other names across India. Each family brings its own little rules. ",
+                )}
               </p>
               <p>
-                This is our invitation to keep playing. Familiar at heart, made
-                for friends near and far.
+                {t(
+                  "This is our invitation to keep playing. Familiar at heart, made for friends near and far. ",
+                )}
               </p>
               <a
                 href="https://rollthedice.in/pages/how-to-play-chowka-bara-7-house"
                 target="_blank"
                 rel="noreferrer"
               >
-                Explore the traditional game <ArrowUpRight size={14} />
+                {t("Explore the traditional game ")}
+                <ArrowUpRight size={14} />
               </a>
               <small>
-                Local and practice games stay on your device. Online rooms store
-                names and game state and expire after 24 hours. No account is
-                required by the game; hosting access rules may still apply.
+                {t(
+                  "Local and practice games stay on your device. Online rooms store names and game state and expire after 24 hours. No account is required by the game; hosting access rules may still apply. ",
+                )}
               </small>
             </div>
           ) : (
@@ -1351,14 +1476,18 @@ export default function GameApp() {
               style={{ background: COLORS[game.players[game.turn].color] }}
             />
             <strong>
-              {myTurn ? "Your turn" : `${game.players[game.turn].name}’s turn`}
+              {t(
+                myTurn ? "Your turn" : `${game.players[game.turn].name}’s turn`,
+              )}
             </strong>
             <small>
-              {rolling
-                ? "Tossing…"
-                : game.roll !== null
-                  ? `Move ${game.roll} spaces`
-                  : "Throw the cowries"}
+              {t(
+                rolling
+                  ? "Tossing…"
+                  : game.roll !== null
+                    ? `Move ${game.roll} spaces`
+                    : "Throw the cowries",
+              )}
             </small>
           </div>
           {myTurn && game.roll !== null ? (
@@ -1368,7 +1497,7 @@ export default function GameApp() {
                   key={p}
                   disabled={!playable}
                   onClick={() => void move(p)}
-                  aria-label={`Move pawn ${p + 1}`}
+                  aria-label={t(`Move pawn ${p + 1}`)}
                 >
                   <span
                     style={{
@@ -1387,7 +1516,7 @@ export default function GameApp() {
               onClick={() => void roll()}
             >
               <Sparkles size={16} />
-              {rolling ? "Tossing…" : myTurn ? "Throw cowries" : "Waiting…"}
+              {t(rolling ? "Tossing…" : myTurn ? "Throw cowries" : "Waiting…")}
               <ArrowRight size={15} />
             </button>
           )}
@@ -1433,6 +1562,7 @@ function ModalDialog({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const { t } = usePreferences();
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const d = ref.current;
@@ -1452,21 +1582,22 @@ function ModalDialog({
       }}
     >
       <div className="modal-header">
-        <span className="overline">CHOWKA BARA · THE GAME TABLE</span>
+        <span className="overline">{t("CHOWKA BARA · THE GAME TABLE")}</span>
         <button
           className="icon-button"
           onClick={onClose}
-          aria-label="Close dialog"
+          aria-label={t("Close dialog")}
         >
           <X size={20} />
         </button>
       </div>
-      <h2>{title}</h2>
+      <h2>{t(title)}</h2>
       {children}
     </dialog>
   );
 }
 function RulesGuide({ size }: { size: BoardSize }) {
+  const { t } = usePreferences();
   const [board, setBoard] = useState<BoardSize>(size);
   const shells = shellCount(board);
   return (
@@ -1478,62 +1609,68 @@ function RulesGuide({ size }: { size: BoardSize }) {
             onClick={() => setBoard(n)}
             key={n}
           >
-            {n} × {n} {n === 5 ? "Classic" : "Grand"}
+            {n} × {n} {t(n === 5 ? "Classic" : "Grand")}
           </button>
         ))}
       </div>
       <p className="modal-lead">
-        2–4 players. Four pawns each. Race around the board and spiral into the
-        center.
+        {t(
+          "2–4 players. Four pawns each. Race around the board and spiral into the center. ",
+        )}
       </p>
       <ol>
         <li>
-          <strong>Throw the cowries</strong>
+          <strong>{t("Throw the cowries")}</strong>
           <p>
-            {shells} shells for this board. Each open mouth scores 1. All open
-            scores {shells}; all closed scores {shells * 2}. Both earn another
-            throw after your move.
+            {t(
+              `${shells} shells for this board. Each open mouth scores 1. All open scores ${shells}; all closed scores ${shells * 2}. Both earn another throw after your move.`,
+            )}
           </p>
         </li>
         <li>
-          <strong>Choose one pawn</strong>
+          <strong>{t("Choose one pawn")}</strong>
           <p>
-            Every pawn begins on your colored home square. Move any one pawn by
-            the full throw. Follow the numbered path: around the outside, then
-            spiral inward. Use “Show path” at the table.
+            {t(
+              "Every pawn begins on your colored home square. Move any one pawn by the full throw. Follow the numbered path: around the outside, then spiral inward. Use “Show path” at the table. ",
+            )}
           </p>
         </li>
         <li>
-          <strong>Capture & find shelter</strong>
+          <strong>{t("Capture & find shelter")}</strong>
           <p>
-            Land exactly on a rival to send their pawns back to the start and
-            earn a bonus throw. Crossed squares and the center are safe. Pawns
-            may share squares; this edition has no pairing or blockade rules.
+            {t(
+              "Land exactly on a rival to send their pawns back to the start and earn a bonus throw. Crossed squares and the center are safe. Pawns may share squares; this edition has no pairing or blockade rules. ",
+            )}
           </p>
         </li>
         <li>
-          <strong>Pick your tradition</strong>
+          <strong>{t("Pick your tradition")}</strong>
           <p>
-            Friendly race allows everyone into the inner ring. Turn on “Capture
-            to enter” to require one capture per player before any of their
-            pawns can leave the outer ring.
+            {t(
+              "Friendly race allows everyone into the inner ring. Turn on “Capture to enter” to require one capture per player before any of their pawns can leave the outer ring. ",
+            )}
           </p>
         </li>
         <li>
-          <strong>Bring all four home</strong>
+          <strong>{t("Bring all four home")}</strong>
           <p>
-            Reach the center by exact count. Bringing a pawn home earns a throw.
-            If you cannot move, your throw is skipped; a bonus throw is kept.
-            The first player with all four home wins.
+            {t(
+              "Reach the center by exact count. Bringing a pawn home earns a throw. If you cannot move, your throw is skipped; a bonus throw is kept. The first player with all four home wins. ",
+            )}
           </p>
         </li>
       </ol>
       <div className="rules-note">
         <ShieldCheck size={21} />
         <p>
-          Families play with different house rules. This edition resolves one
-          throw at a time, uses nine safe houses, and has no three-bonus
-          penalty.
+          {t(
+            board === 5
+              ? "The 5-house board has four safe houses at the outer midpoints. The center is the finish. Inner squares allow captures."
+              : "The 7-house board has eight safe houses plus the center. Crossed squares protect your pawns.",
+          )}
+          {t(
+            " Throws resolve individually, with no pairing, blockades, or three-bonus penalty.",
+          )}
         </p>
       </div>
       <a
@@ -1542,7 +1679,8 @@ function RulesGuide({ size }: { size: BoardSize }) {
         target="_blank"
         rel="noreferrer"
       >
-        Based on Karnataka’s cowrie game tradition <ArrowUpRight size={13} />
+        {t("Based on Karnataka’s cowrie game tradition ")}
+        <ArrowUpRight size={13} />
       </a>
     </div>
   );
