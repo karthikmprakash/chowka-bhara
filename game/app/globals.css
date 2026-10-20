@@ -4592,8 +4592,15 @@ html[data-theme="dark"] .throw-button.primary-button {
   }
   .app-shell[data-screen="setup"] .game-panel,
   .app-shell[data-screen="seat"] .game-panel {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     max-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  /* The action sits at the foot of the panel, where a thumb expects it. */
+  .app-shell[data-screen="setup"] .game-panel > .primary-button,
+  .app-shell[data-screen="seat"] .game-panel > .primary-button {
+    margin-top: auto;
   }
   .app-shell[data-screen="setup"] .site-header nav,
   .app-shell[data-screen="seat"] .site-header nav {
@@ -4620,5 +4627,373 @@ html[data-theme="dark"] .throw-button.primary-button {
   }
   .home-rules {
     justify-content: center;
+  }
+}
+
+/* Phone design system.
+   The wide layout is set in small editorial type, which reads as refined on a
+   large screen and as unreadable on a phone. These rules give the narrow
+   layout its own scale: 16px body, 13-14px secondary, 11-12px captions, and
+   44px touch targets, with the spacing tightened to pay for the larger type. */
+@media (max-width: 700px) {
+  /* Type scale */
+  .page-heading p {
+    font-size: 16px;
+    line-height: 1.55;
+    max-width: 360px;
+  }
+  .eyebrow,
+  .overline {
+    font-size: 11px;
+    letter-spacing: 1.4px;
+  }
+  .panel-title p,
+  .turn-heading p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .mode-description {
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .setting-heading,
+  .settings-row label,
+  .players-picker label,
+  .avatar-picker legend,
+  .experience-picker legend {
+    font-size: 14px;
+  }
+  .setting-heading > span {
+    font-size: 12px;
+  }
+  .board-option strong {
+    font-size: 17px;
+  }
+  .board-option small {
+    font-size: 12.5px;
+  }
+  .traditional-rules {
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+  .experience-picker strong {
+    font-size: 15px;
+  }
+  .experience-picker small {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .experience-picker p {
+    font-size: 13px;
+  }
+  .avatar-picker small {
+    font-size: 13px;
+  }
+  .how-strip strong {
+    font-size: 15px;
+  }
+  .how-strip small {
+    font-size: 12.5px;
+    white-space: normal;
+  }
+  .step-number {
+    font-size: 12px;
+  }
+  .how-intro {
+    font-size: 14px;
+  }
+  .join-link,
+  .game-panel .join-link {
+    font-size: 13.5px;
+  }
+  .panel-footnote {
+    font-size: 12.5px;
+  }
+  .resume-button {
+    font-size: 13.5px;
+  }
+  .footer-word,
+  footer,
+  footer button {
+    font-size: 12px;
+  }
+  .lobby-seats > div {
+    font-size: 13px;
+  }
+  .lobby-seats small {
+    font-size: 11px;
+  }
+  .room-code-box > span {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+  }
+  .room-code-box button {
+    font-size: 13.5px;
+  }
+  /* The wordmark carries the header; the strapline is for the wide layout. */
+  .brand {
+    font-size: 21px;
+    gap: 8px;
+  }
+  .brand small {
+    display: none;
+  }
+  .brand-symbol {
+    width: 27px;
+    height: 27px;
+  }
+  .language-button {
+    font-size: 13px;
+    min-height: 40px;
+    padding: 6px 11px;
+  }
+  .nav-link {
+    font-size: 13px;
+  }
+
+  /* Touch targets */
+  .header-actions .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+  /* The portrait is chosen in the set up panel, and the player settings are
+     on the board, so the header keeps room for the controls that matter. */
+  .site-header .profile-button {
+    display: none;
+  }
+  .icon-button svg {
+    width: 20px;
+    height: 20px;
+  }
+  .screen-back {
+    width: 44px;
+    height: 44px;
+  }
+  .mode-tabs button {
+    font-size: 14px;
+    padding: 12px 4px;
+    gap: 7px;
+  }
+  .mode-tabs svg {
+    width: 18px;
+    height: 18px;
+  }
+  .players-picker button {
+    font-size: 15px;
+    width: 42px;
+    height: 42px;
+  }
+  .primary-button,
+  .secondary-button,
+  .subtle-button {
+    font-size: 15px;
+    min-height: 52px;
+  }
+  .home-cta {
+    font-size: 17px;
+    min-height: 58px;
+  }
+  .home-rules {
+    min-height: 48px;
+  }
+  .experience-picker button {
+    min-height: 88px;
+    padding: 15px 13px;
+  }
+  .board-option {
+    padding: 19px 14px;
+    gap: 12px;
+  }
+  .board-option .grid-glyph {
+    width: 34px;
+    height: 34px;
+  }
+  .mode-tabs {
+    padding: 5px;
+    gap: 4px;
+  }
+  .mode-tabs button {
+    padding: 15px 4px;
+  }
+  .mode-tabs svg {
+    width: 20px;
+    height: 20px;
+  }
+  .traditional-rules {
+    gap: 12px;
+    padding: 14px 0 18px;
+  }
+  .traditional-rules svg {
+    width: 22px;
+    height: 22px;
+  }
+  .avatar-picker .portrait {
+    max-width: 64px;
+  }
+  .avatar-picker > div {
+    gap: 10px;
+  }
+  .experience-picker button {
+    min-height: 96px;
+  }
+  .settings-row input {
+    min-height: 50px;
+  }
+  .how-strip > button {
+    padding: 13px 0;
+    gap: 14px;
+  }
+  .how-strip > button > span:nth-child(2) {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 2px;
+  }
+  .how-strip small {
+    text-align: left;
+    max-width: none;
+    line-height: 1.45;
+  }
+  .how-strip > button > svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Tighter rhythm: the larger type pays for itself here */
+  .page-heading {
+    padding: 18px 0 14px;
+  }
+  .app-shell[data-screen="home"] .page-heading {
+    padding: 14px 0 16px;
+  }
+  .game-panel {
+    padding: 18px 16px 16px;
+  }
+  .panel-title h2,
+  .turn-heading h2 {
+    font-size: 30px;
+    margin: 8px 0 6px;
+  }
+  .mode-tabs {
+    margin-top: 16px;
+  }
+  .avatar-picker {
+    margin: 16px 0;
+  }
+  .avatar-picker legend {
+    margin-bottom: 10px;
+  }
+  .experience-picker {
+    margin: 16px 0;
+  }
+  .settings-row {
+    margin: 16px 0 14px;
+  }
+  .traditional-rules {
+    padding: 10px 0 14px;
+  }
+  .join-link {
+    margin-top: 12px;
+  }
+  .resume-button {
+    margin-top: 12px;
+    padding-top: 10px;
+  }
+  .how-strip {
+    padding: 4px 0;
+    margin-top: 18px;
+  }
+  footer {
+    padding: 16px 0 18px;
+  }
+  .app-shell[data-screen] > footer {
+    padding-bottom: max(18px, var(--inset-bottom));
+  }
+  .home-actions {
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .lobby-seats {
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .lobby-seats > div {
+    padding: 11px;
+  }
+
+  /* The table on a phone */
+  .table-toolbar {
+    font-size: 10.5px;
+  }
+  .board-turn-caption {
+    font-size: 12px;
+  }
+  .seat strong {
+    font-size: 12px;
+  }
+  .seat > div > span {
+    font-size: 10.5px;
+  }
+  .seat-avatar {
+    width: 34px;
+    height: 34px;
+  }
+  .pawn span {
+    font-size: 10px;
+  }
+  .board-key,
+  .board-letters {
+    font-size: 9px;
+  }
+  .focus-button,
+  .path-button {
+    font-size: 11px;
+    padding: 8px 8px;
+    min-height: 34px;
+  }
+  .focus-topbar:has(.immersive-button) .icon-button {
+    width: 40px;
+    height: 40px;
+  }
+  .focus-game-name > span {
+    font-size: 14px;
+  }
+  .focus-game-name small {
+    font-size: 10px;
+  }
+  .focus-topbar:has(.immersive-button) .focus-game-name small {
+    font-size: 9.5px;
+  }
+  .is-focused .mobile-turn-bar strong {
+    font-size: 15px;
+  }
+  .is-focused .mobile-turn-bar small {
+    font-size: 12.5px;
+  }
+  .is-focused .mobile-turn-bar > .primary-button {
+    font-size: 15px;
+    min-height: 56px;
+  }
+  .is-focused .mobile-pawns button {
+    width: 50px;
+    height: 54px;
+  }
+  .is-focused .mobile-pawns button > span {
+    font-size: 14px;
+    width: 30px;
+    height: 30px;
+  }
+  .is-focused .seat strong,
+  .is-focused .seat-1 strong,
+  .is-focused .seat-3 strong {
+    font-size: 11px;
+  }
+  .is-focused .seat-avatar {
+    width: 26px;
+    height: 26px;
+  }
+  .mobile-turn-bar .throw-button .throw-copy strong {
+    font-size: 16px;
   }
 }

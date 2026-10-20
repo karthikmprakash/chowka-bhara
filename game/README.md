@@ -50,6 +50,20 @@ dialog first, and leaves the app only from the welcome screen. The wide layout
 keeps the original one long page with the board and the set up panel side by
 side.
 
+## The type on a phone
+
+The wide layout is set in small editorial type, which reads as refined on a
+large screen and as unreadable on a phone. The narrow layout therefore has its
+own scale, owned by the phone design system block at the end of
+`app/globals.css`:
+
+- 16px body copy, 13-14px secondary text, 11-12px captions and overlines.
+- 44px touch targets, 20px icons, 52-58px buttons.
+- The set up panel fills the screen and pins its action to the foot, so no
+  screen floats in empty space.
+
+Nothing above 700px changes: the wide layout keeps its original sizes.
+
 ## Rules in this edition
 
 The 5×5 board uses four shells, scoring 1, 2, 3, 4, or 8. The 7×7 board uses six, scoring 1–6 or 12. All open or all closed grants a bonus. Pawns begin on the colored home square. Move around the outer perimeter, then follow the alternating inward spiral. The seven-house route revisits its final inner-ring entry before reaching the center, keeping every step orthogonally connected.
