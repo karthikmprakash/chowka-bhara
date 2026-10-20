@@ -6,6 +6,7 @@ export interface Player {
   id: string;
   name: string;
   color: number;
+  avatar?: number;
   bot: boolean;
   pawns: number[];
   captures: number;
@@ -113,14 +114,15 @@ export function newGame(
   count = 2,
   captureRequired = false,
   name = "You",
+  avatar = 0,
 ): Game {
   const colors = count === 2 ? [0, 2] : count === 3 ? [0, 1, 2] : [0, 1, 2, 3];
   return {
     size,
     mode,
     captureRequired,
-    players: colors.map((c, i) =>
-      makePlayer(
+    players: colors.map((c, i) => ({
+      ...makePlayer(
         i === 0
           ? name
           : mode === "solo"
@@ -129,7 +131,8 @@ export function newGame(
         c,
         mode === "solo" && i > 0,
       ),
-    ),
+      avatar: i === 0 ? avatar : [0, 0, 1, 4][i],
+    })),
     turn: 0,
     phase: mode === "online" ? "lobby" : "playing",
     roll: null,

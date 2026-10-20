@@ -41,6 +41,12 @@ function nameOf(v: unknown) {
     throw new Error("Use a name between 1 and 20 characters.");
   return v.trim();
 }
+function avatarOf(v: unknown) {
+  if (v === undefined) return 0;
+  if (typeof v !== "number" || !Number.isInteger(v) || v < 0 || v > 7)
+    throw new Error("Choose a valid portrait.");
+  return v;
+}
 function settings(b: Record<string, unknown>) {
   if (b.size !== 5 && b.size !== 7)
     throw new Error("Choose a 5×5 or 7×7 board.");
@@ -92,7 +98,7 @@ export async function createRoom(req: Request) {
         b.captureRequired as boolean,
         name,
       );
-    g.players = [makePlayer(name, 0)];
+    g.players = [{ ...makePlayer(name, 0), avatar: avatarOf(b.avatar) }];
     const members: Members = { [auth]: g.players[0].id },
       alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     for (let tries = 0; tries < 5; tries++) {
@@ -164,7 +170,7 @@ export async function actRoom(req: Request, code: string) {
         color = [0, 2, 1, 3].find(
           (c) => !g.players.some((p) => p.color === c),
         )!;
-      const p = makePlayer(name, color);
+      const p = { ...makePlayer(name, color), avatar: avatarOf(b.avatar) };
       g.players.push(p);
       issued = token();
       members[issued] = p.id;
@@ -183,7 +189,10 @@ export async function actRoom(req: Request, code: string) {
         );
       const idx = g.players.findIndex((p) => p.id === id);
       if (idx < 0) return json({ error: "You no longer have a seat." }, 401);
-      if (b.action === "start") {
+      if (b.action === "profile") {
+        g.players[idx].avatar = avatarOf(b.avatar);
+        g.revision++;
+      } else if (b.action === "start") {
         if (idx !== 0 || g.phase !== "lobby" || g.players.length < 2)
           throw new Error(
             "The host can start once at least two players have joined.",

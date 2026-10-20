@@ -39,6 +39,9 @@ import {
   Maximize,
   Minimize,
 } from "lucide-react";
+import { Avatar, AvatarPicker, portraitOf } from "./avatar";
+import { ThrowButton } from "./throw-button";
+import { useGameAudio } from "./use-game-audio";
 import { Board } from "./board";
 import { Cowries } from "./cowries";
 import { usePlayView } from "./use-play-view";
@@ -70,7 +73,7 @@ interface Session {
   token: string;
   playerId: string;
 }
-type Modal = "rules" | "join" | "leave" | "about" | null;
+type Modal = "rules" | "join" | "leave" | "about" | "profile" | null;
 const LOCAL_KEY = "chowka-bara:saved:v1",
   ROOM_KEY = "chowka-bara:room:v1";
 function GridGlyph({ size }: { size: number }) {
@@ -99,6 +102,7 @@ function GameScreen() {
     [count, setCount] = useState(2),
     [capture, setCapture] = useState(false),
     [name, setName] = useState(""),
+    [avatar, setAvatar] = useState(0),
     [game, setGame] = useState<Game | null>(null),
     [session, setSession] = useState<Session | null>(null);
   const [modal, setModal] = useState<Modal>(null),
@@ -169,11 +173,9 @@ function GameScreen() {
   const gameRef = useRef(game),
     sessionRef = useRef(session),
     inFlight = useRef(false),
-    restored = useRef(false),
-    soundRef = useRef(sound);
+    restored = useRef(false);
   gameRef.current = game;
   sessionRef.current = session;
-  soundRef.current = sound;
   const demo = useMemo(
     () =>
       newGame(
@@ -182,8 +184,9 @@ function GameScreen() {
         count,
         capture,
         name.trim() || "You",
+        avatar,
       ),
-    [size, mode, count, capture, name],
+    [size, mode, count, capture, name, avatar],
   );
   const boardGame = game || demo;
   const me =
@@ -200,29 +203,31 @@ function GameScreen() {
   const say = (text: string) => {
     setNotice(text);
   };
-  const chime = useCallback((kind = "roll") => {
-    if (!soundRef.current) return;
+  const { play: chime, unlock: unlockAudio } = useGameAudio(sound);
+  const toggleSound = () => {
+    if (!sound) unlockAudio();
+    setSound(!sound);
+  };
+  const chooseAvatar = (value: number) => {
+    setAvatar(value);
     try {
-      const ctx = new AudioContext(),
-        o = ctx.createOscillator(),
-        gain = ctx.createGain();
-      o.connect(gain);
-      gain.connect(ctx.destination);
-      o.type = "sine";
-      o.frequency.setValueAtTime(kind === "roll" ? 380 : 620, ctx.currentTime);
-      o.frequency.exponentialRampToValueAtTime(
-        kind === "roll" ? 180 : 820,
-        ctx.currentTime + 0.1,
-      );
-      gain.gain.setValueAtTime(0.055, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
-      o.start();
-      o.stop(ctx.currentTime + 0.2);
-      o.onended = () => void ctx.close();
-    } catch {
-      /* Audio is optional. */
+      localStorage.setItem("chowka-bara:avatar", String(value));
+    } catch {}
+    if (game) {
+      if (session) void onlineAction("profile", { avatar: value });
+      else
+        setGame((old) =>
+          old
+            ? {
+                ...old,
+                players: old.players.map((p, i) =>
+                  i === 0 ? { ...p, avatar: value } : p,
+                ),
+              }
+            : old,
+        );
     }
-  }, []);
+  };
   useEffect(() => {
     if (restored.current) return;
     restored.current = true;
@@ -230,6 +235,8 @@ function GameScreen() {
     try {
       const n = localStorage.getItem("chowka-bara:name");
       if (n) setName(n);
+      const a = Number(localStorage.getItem("chowka-bara:avatar"));
+      if (Number.isInteger(a) && a >= 0 && a < 8) setAvatar(a);
       const saved = localStorage.getItem(LOCAL_KEY);
       if (saved) {
         const g = JSON.parse(saved);
@@ -450,6 +457,7 @@ function GameScreen() {
           count,
           capture,
           name.trim() || (mode === "local" ? "Player 1" : "You"),
+          avatar,
         ),
       );
       return;
@@ -466,6 +474,7 @@ function GameScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
+          avatar,
           size,
           captureRequired: capture,
         }),
@@ -494,7 +503,7 @@ function GameScreen() {
       const r = await fetch(`/api/rooms/${code}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "join", name: name.trim() }),
+        body: JSON.stringify({ action: "join", name: name.trim(), avatar }),
       });
       const data = (await r.json()) as RoomResponse;
       if (!r.ok) throw new Error(data.error);
@@ -558,6 +567,7 @@ function GameScreen() {
           game.players.length,
           game.captureRequired,
           name.trim() || (game.mode === "local" ? "Player 1" : "You"),
+          avatar,
         ),
       );
   }
@@ -576,6 +586,13 @@ function GameScreen() {
       {focused && game && (
         <div className="focus-topbar">
           <div className="focus-game-name">
+            <button
+              className="profile-button"
+              onClick={() => setModal("profile")}
+              aria-label={t("Choose your portrait")}
+            >
+              <Avatar value={portraitOf(game.players[me] || game.players[0])} />
+            </button>
             <Flower size={20} />
             <span>
               {t("chowka bara")}
@@ -605,7 +622,7 @@ function GameScreen() {
             </button>
             <button
               className="icon-button"
-              onClick={() => setSound(!sound)}
+              onClick={toggleSound}
               aria-label={t(sound ? "Mute sound" : "Enable sound")}
             >
               {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
@@ -720,8 +737,19 @@ function GameScreen() {
             <i /> {t("Made for togetherness ")}
           </span>
           <button
+            className="profile-button"
+            onClick={() => setModal("profile")}
+            aria-label={t("Choose your portrait")}
+          >
+            <Avatar
+              value={
+                game ? portraitOf(game.players[me] || game.players[0]) : avatar
+              }
+            />
+          </button>
+          <button
             className="icon-button"
-            onClick={() => setSound(!sound)}
+            onClick={toggleSound}
             aria-label={t(sound ? "Mute sound" : "Enable sound")}
             title={t(sound ? "Mute sound" : "Enable sound")}
           >
@@ -983,6 +1011,7 @@ function GameScreen() {
                     </button>
                   ))}
                 </div>
+                <AvatarPicker value={avatar} onChange={chooseAvatar} />
                 <div className="settings-row">
                   <div>
                     <label htmlFor="player-name">
@@ -1139,12 +1168,10 @@ function GameScreen() {
                       <div key={p?.id || i} className={p ? "filled" : ""}>
                         {p ? (
                           <>
-                            <span
+                            <Avatar
                               className="lobby-avatar"
-                              style={{ background: COLORS[p.color] }}
-                            >
-                              {p.name[0].toUpperCase()}
-                            </span>
+                              value={portraitOf(p)}
+                            />
                             <strong>
                               {p.name}
                               {t(p.id === session?.playerId ? " (you)" : "")}
@@ -1336,27 +1363,21 @@ function GameScreen() {
                     )}
                   </div>
                 </div>
-                <button
-                  className="primary-button roll-button"
+                <ThrowButton
+                  className="roll-button"
                   disabled={!playable || game.roll !== null}
+                  rolling={rolling}
                   onClick={() => void roll()}
-                >
-                  <Sparkles size={18} />
-                  <span>
-                    {t(
-                      rolling
-                        ? "Shells in the air…"
-                        : game.roll !== null
-                          ? "Choose your pawn"
-                          : myTurn
-                            ? "Throw the cowries"
-                            : "Their turn to throw",
-                    )}
-                  </span>
-                  {!rolling && game.roll === null && (
-                    <span className="keyboard-hint">↵</span>
-                  )}
-                </button>
+                  label={
+                    rolling
+                      ? "Shells in the air…"
+                      : game.roll !== null
+                        ? "Choose your pawn"
+                        : myTurn
+                          ? "Throw the cowries"
+                          : "Their turn to throw"
+                  }
+                />
                 {game.roll !== null && myTurn && (
                   <div className="pawn-picker">
                     {legalMoves(game).map((p) => (
@@ -1541,16 +1562,23 @@ function GameScreen() {
             setError("");
           }}
           title={t(
-            modal === "rules"
-              ? "A small guide to a great game."
-              : modal === "join"
-                ? "There’s a seat for you."
-                : modal === "leave"
-                  ? "Step away from the table?"
-                  : "Old roots. New connections.",
+            modal === "profile"
+              ? "Your face at the table"
+              : modal === "rules"
+                ? "A small guide to a great game."
+                : modal === "join"
+                  ? "There’s a seat for you."
+                  : modal === "leave"
+                    ? "Step away from the table?"
+                    : "Old roots. New connections.",
           )}
         >
-          {modal === "join" ? (
+          {modal === "profile" ? (
+            <AvatarPicker
+              value={game?.players[me]?.avatar ?? avatar}
+              onChange={chooseAvatar}
+            />
+          ) : modal === "join" ? (
             <form onSubmit={join}>
               <p className="modal-lead">
                 {t(
@@ -1569,6 +1597,7 @@ function GameScreen() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t("What should we call you?")}
               />
+              <AvatarPicker value={avatar} onChange={chooseAvatar} />
               <label className="field-label" htmlFor="room-code">
                 {t("Room code ")}
               </label>
@@ -1745,17 +1774,14 @@ function GameScreen() {
                 ))}
               </div>
             ) : (
-              <button
-                className="primary-button"
+              <ThrowButton
                 disabled={!playable || game.roll !== null}
+                rolling={rolling}
                 onClick={() => void roll()}
-              >
-                <Sparkles size={16} />
-                {t(
-                  rolling ? "Tossing…" : myTurn ? "Throw cowries" : "Waiting…",
-                )}
-                <ArrowRight size={15} />
-              </button>
+                label={
+                  rolling ? "Tossing…" : myTurn ? "Throw cowries" : "Waiting…"
+                }
+              />
             )}
           </div>
         )}

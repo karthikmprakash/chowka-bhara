@@ -1,5 +1,19 @@
 export type Language = "en" | "kn";
 export const kannada: Record<string, string> = {
+  "Your face at the table": "ಆಟದ ಅಂಗಳದಲ್ಲಿ ನಿಮ್ಮ ಮುಖ",
+  "Choose someone who feels like you.": "ನಿಮ್ಮಂತಿರುವ ಮುಖವನ್ನು ಆರಿಸಿ.",
+  "Choose your portrait": "ನಿಮ್ಮ ಮುಖಚಿತ್ರ ಆರಿಸಿ",
+  "A little luck in the air": "ಕವಡೆಗಳಲ್ಲಿ ಕೊಂಚ ಅದೃಷ್ಟ",
+  "A handful of possibilities": "ಕೈತುಂಬ ಕವಡೆ, ತುಂಬಾ ಸಾಧ್ಯತೆ",
+  "Portrait 1": "ಮುಖಚಿತ್ರ 1",
+  "Portrait 2": "ಮುಖಚಿತ್ರ 2",
+  "Portrait 3": "ಮುಖಚಿತ್ರ 3",
+  "Portrait 4": "ಮುಖಚಿತ್ರ 4",
+  "Portrait 5": "ಮುಖಚಿತ್ರ 5",
+  "Portrait 6": "ಮುಖಚಿತ್ರ 6",
+  "Portrait 7": "ಮುಖಚಿತ್ರ 7",
+  "Portrait 8": "ಮುಖಚಿತ್ರ 8",
+
   "Hide browser controls": "ಬ್ರೌಸರ್ ನಿಯಂತ್ರಣಗಳನ್ನು ಮರೆಮಾಡಿ",
   "Full screen": "ಪೂರ್ಣ ಪರದೆ",
   "Exit full screen": "ಪೂರ್ಣ ಪರದೆಯಿಂದ ಹೊರಬನ್ನಿ",

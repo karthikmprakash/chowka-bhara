@@ -69,3 +69,9 @@ Phone games open in a viewport-filling play layout with the board, current turn,
 Cowrie throws now animate over the visible board. Results retain the original thrower and score even when a skipped move has already advanced the turn. Local and online play share this presentation. Keyboard throws and reduced-motion settings skip tumbling. Shell and pawn movement uses transform/opacity animation without an animation-library dependency.
 
 The pieces use procedural grain artwork: kidney beans, green gram, chickpeas, and rice, with visible pawn numbers and reachable move buttons. Brown cowries include modeled mouths and shell texture. No remote image downloads are needed during play. Phone layout was checked in a 430×780 browser viewport, including both board sizes; device-specific Safari gestures and physical-device feel still need a hardware check.
+
+### Household presentation
+
+Eight hand-painted Indian household portraits are generated with the built-in image tool; the exact prompt is in `public/images/PROMPT.md`. The shared WebP sprite is about 200 KB, cached with static assets. Pick a portrait before hosting/joining, or use the portrait button during a game. Online changes authenticate the seat and participate in revision checks; older saved games receive a deterministic fallback.
+
+Throw audio is an excerpt of bassronin's CC0 **Shell Drop**, an actual seashell recording. Source and processing are documented in `public/audio/LICENSE.txt`. One reusable Web Audio context loads the 11 KB local sample after sound is enabled; audio remains optional. Full-screen two-player play reduces side insets and raises the board cap from 540 to 820 pixels, with a height limit for short screens.

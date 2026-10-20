@@ -1,5 +1,6 @@
 "use client";
 import { memo, useState, type CSSProperties } from "react";
+import { Avatar, portraitOf } from "./avatar";
 import { usePreferences } from "./preferences";
 import { Flower, Flag, Route } from "lucide-react";
 import {
@@ -64,16 +65,16 @@ export const Board = memo(function Board({
       <div className="stage-watermark" aria-hidden="true">
         {t("चौका बारा ")}
       </div>
-      <div className="board-surround">
+      <div
+        className={`board-surround ${g.players.length === 2 ? "two-seats" : "many-seats"}`}
+      >
         {g.players.map((p, i) => (
           <div
             className={`seat seat-${p.color} ${!preview && g.turn === i && g.phase === "playing" ? "seat-active" : ""} ${p.resigned ? "seat-out" : ""}`}
             key={p.id}
             style={{ "--player": COLORS[p.color] } as CSSProperties}
           >
-            <span className="seat-avatar">
-              {p.name.slice(0, 1).toUpperCase()}
-            </span>
+            <Avatar className="seat-avatar" value={portraitOf(p)} />
             <div>
               <strong>{p.name}</strong>
               <span>

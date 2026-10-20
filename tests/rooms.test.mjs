@@ -171,5 +171,59 @@ test("Invalid inputs rejected and room state is private", async () => {
     },
     body: JSON.stringify({ name: "Host", size: 5, captureRequired: false }),
   });
-  assert.ok([400, 403].includes(r.status), "Cross-origin requests must be rejected");
+  assert.ok(
+    [400, 403].includes(r.status),
+    "Cross-origin requests must be rejected",
+  );
+});
+
+test("Portraits persist across room reads and only the authenticated seat can change its portrait", async () => {
+  const host = await call("/api/rooms", {
+    name: "Asha",
+    size: 5,
+    captureRequired: false,
+    avatar: 6,
+  });
+  assert.equal(host.status, 201);
+  assert.equal(host.game.players[0].avatar, 6);
+  const path = "/api/rooms/" + host.code;
+  const guest = await call(path, { action: "join", name: "Ajji", avatar: 2 });
+  assert.equal(guest.game.players[1].avatar, 2);
+  assert.equal(
+    (
+      await call(path, {
+        action: "profile",
+        avatar: 3,
+        revision: guest.game.revision,
+      })
+    ).status,
+    401,
+  );
+  const changed = await call(
+    path,
+    { action: "profile", avatar: 7, revision: guest.game.revision },
+    guest.token,
+  );
+  assert.equal(changed.status, 200);
+  assert.equal(changed.game.players[0].avatar, 6);
+  assert.equal(changed.game.players[1].avatar, 7);
+  const invalid = await call(
+    path,
+    { action: "profile", avatar: 8, revision: changed.game.revision },
+    guest.token,
+  );
+  assert.equal(invalid.status, 400);
+  const read = await call(path, undefined, host.token);
+  assert.equal(read.game.players[1].avatar, 7);
+  assert.equal(
+    (
+      await call("/api/rooms", {
+        name: "Invalid",
+        size: 5,
+        captureRequired: false,
+        avatar: -1,
+      })
+    ).status,
+    400,
+  );
 });
