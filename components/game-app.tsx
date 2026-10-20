@@ -1,0 +1,1549 @@
+"use client";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import {
+  ArrowUpRight,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  CircleHelp,
+  Copy,
+  Check,
+  Users,
+  Monitor,
+  Bot,
+  Volume2,
+  VolumeX,
+  X,
+  Link2,
+  Flag,
+  RotateCcw,
+  Route,
+  Wifi,
+  WifiOff,
+  Flower,
+  ShieldCheck,
+  CheckCircle2,
+  Loader2,
+  DoorOpen,
+  Sparkles,
+} from "lucide-react";
+import { Board } from "./board";
+import {
+  COLORS,
+  newGame,
+  rollGame,
+  moveGame,
+  chooseBotMove,
+  randomShells,
+  playerPath,
+  legalMoves,
+  shellCount,
+  type BoardSize,
+  type Mode,
+  type Game,
+} from "@/lib/game";
+interface RoomResponse {
+  code: string;
+  token: string;
+  playerId: string;
+  game: Game;
+  error?: string;
+}
+interface Session {
+  code: string;
+  token: string;
+  playerId: string;
+}
+type Modal = "rules" | "join" | "leave" | "about" | null;
+const LOCAL_KEY = "chowka-bara:saved:v1",
+  ROOM_KEY = "chowka-bara:room:v1";
+function GridGlyph({ size }: { size: number }) {
+  return (
+    <span
+      className="grid-glyph"
+      style={{ gridTemplateColumns: `repeat(${size},1fr)` }}
+    >
+      {Array.from({ length: size * size }, (_, i) => (
+        <i key={i} />
+      ))}
+    </span>
+  );
+}
+function Cowries({
+  count,
+  shells,
+  rolling,
+}: {
+  count: number;
+  shells: boolean[];
+  rolling: boolean;
+}) {
+  return (
+    <div
+      className={`cowries ${rolling ? "throwing" : ""}`}
+      aria-label={
+        shells.length
+          ? `${shells.filter(Boolean).length} shells face up`
+          : `${count} cowrie shells`
+      }
+    >
+      {Array.from({ length: count }, (_, i) => (
+        <span
+          key={i}
+          className={`cowrie ${shells[i] === false ? "shell-down" : ""}`}
+          style={
+            {
+              "--shell-i": i,
+              "--angle": `${[-17, 12, -8, 19, -12, 8][i]}deg`,
+            } as CSSProperties
+          }
+        >
+          <i />
+        </span>
+      ))}
+    </div>
+  );
+}
+export default function GameApp() {
+  const [size, setSize] = useState<BoardSize>(5),
+    [mode, setMode] = useState<Mode>("online"),
+    [count, setCount] = useState(2),
+    [capture, setCapture] = useState(false),
+    [name, setName] = useState(""),
+    [game, setGame] = useState<Game | null>(null),
+    [session, setSession] = useState<Session | null>(null);
+  const [modal, setModal] = useState<Modal>(null),
+    [roomCode, setRoomCode] = useState(""),
+    [busy, setBusy] = useState(false),
+    [rolling, setRolling] = useState(false),
+    [error, setError] = useState(""),
+    [notice, setNotice] = useState(""),
+    [sound, setSound] = useState(false),
+    [showPath, setShowPath] = useState(false),
+    [connected, setConnected] = useState(true),
+    [copied, setCopied] = useState(false),
+    [resume, setResume] = useState<Game | null>(null),
+    [hydrated, setHydrated] = useState(false);
+  const gameRef = useRef(game),
+    sessionRef = useRef(session),
+    inFlight = useRef(false),
+    restored = useRef(false),
+    soundRef = useRef(sound);
+  gameRef.current = game;
+  sessionRef.current = session;
+  soundRef.current = sound;
+  const demo = useMemo(
+    () =>
+      newGame(
+        size,
+        mode === "online" ? "local" : mode,
+        count,
+        capture,
+        name.trim() || "You",
+      ),
+    [size, mode, count, capture, name],
+  );
+  const boardGame = game || demo;
+  const me =
+    session && game
+      ? game.players.findIndex((p) => p.id === session.playerId)
+      : 0;
+  const myTurn =
+    !!game &&
+    game.phase === "playing" &&
+    (game.mode === "local" ||
+      (game.mode === "solo" && !game.players[game.turn].bot) ||
+      (game.mode === "online" && !!session && game.turn === me));
+  const playable = myTurn && !busy && !rolling;
+  const say = (text: string) => {
+    setNotice(text);
+  };
+  const chime = useCallback((kind = "roll") => {
+    if (!soundRef.current) return;
+    try {
+      const ctx = new AudioContext(),
+        o = ctx.createOscillator(),
+        gain = ctx.createGain();
+      o.connect(gain);
+      gain.connect(ctx.destination);
+      o.type = "sine";
+      o.frequency.setValueAtTime(kind === "roll" ? 380 : 620, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(
+        kind === "roll" ? 180 : 820,
+        ctx.currentTime + 0.1,
+      );
+      gain.gain.setValueAtTime(0.055, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+      o.start();
+      o.stop(ctx.currentTime + 0.2);
+      o.onended = () => void ctx.close();
+    } catch {
+      /* Audio is optional. */
+    }
+  }, []);
+  useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
+    setHydrated(true);
+    try {
+      const n = localStorage.getItem("chowka-bara:name");
+      if (n) setName(n);
+      const saved = localStorage.getItem(LOCAL_KEY);
+      if (saved) {
+        const g = JSON.parse(saved);
+        if (
+          (g.size === 5 || g.size === 7) &&
+          g.mode !== "online" &&
+          g.phase !== "finished" &&
+          Array.isArray(g.players)
+        )
+          setResume(g);
+      }
+      const query = new URLSearchParams(location.search).get("room");
+      const s = localStorage.getItem(ROOM_KEY);
+      if (s) {
+        const v = JSON.parse(s);
+        if (v.code && v.token && v.playerId && (!query || query === v.code)) {
+          setSession(v);
+          setBusy(true);
+          fetch(`/api/rooms/${v.code}`, {
+            headers: { Authorization: `Bearer ${v.token}` },
+          })
+            .then(async (r) => {
+              const data = (await r.json()) as RoomResponse;
+              if (!r.ok) throw new Error(data.error);
+              setGame(data.game);
+              setConnected(true);
+            })
+            .catch((e) => {
+              setError(e.message);
+              setSession(null);
+              localStorage.removeItem(ROOM_KEY);
+            })
+            .finally(() => setBusy(false));
+        }
+      }
+      if (query) {
+        setRoomCode(query.toUpperCase());
+        if (!s || JSON.parse(s).code !== query) setModal("join");
+      }
+    } catch {
+      localStorage.removeItem(LOCAL_KEY);
+      localStorage.removeItem(ROOM_KEY);
+    }
+  }, []);
+  useEffect(() => {
+    if (!game || game.mode === "online") return;
+    try {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(game));
+    } catch {}
+  }, [game]);
+  useEffect(() => {
+    try {
+      localStorage.setItem("chowka-bara:name", name);
+    } catch {}
+  }, [name]);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(""), 3500);
+    return () => clearTimeout(timer);
+  }, [notice]);
+  // Poll a single room in sequence; revision checks prevent stale reads overwriting a move.
+  useEffect(() => {
+    if (!session) return;
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      if (!disposed && !inFlight.current) {
+        try {
+          const r = await fetch(`/api/rooms/${session.code}`, {
+            headers: { Authorization: `Bearer ${session.token}` },
+          });
+          const data = (await r.json()) as RoomResponse;
+          if (r.status === 401 || r.status === 404) {
+            if (!disposed) {
+              setError(data.error || "Could not connect to the room.");
+              setSession(null);
+              setGame(null);
+              localStorage.removeItem(ROOM_KEY);
+            }
+            return;
+          }
+          if (!r.ok) throw new Error(data.error);
+          if (!disposed) {
+            setConnected(true);
+            setGame((old) =>
+              !old || data.game.revision > old.revision ? data.game : old,
+            );
+          }
+        } catch {
+          if (!disposed) setConnected(false);
+        }
+      }
+      if (!disposed) timer = setTimeout(poll, document.hidden ? 5000 : 1000);
+    };
+    timer = setTimeout(poll, 1000);
+    const wake = () => {
+      if (!document.hidden) {
+        clearTimeout(timer);
+        void poll();
+      }
+    };
+    document.addEventListener("visibilitychange", wake);
+    return () => {
+      disposed = true;
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", wake);
+    };
+  }, [session]);
+  const onlineAction = useCallback(
+    async (action: string, extra: Record<string, unknown> = {}) => {
+      const s = sessionRef.current,
+        g = gameRef.current;
+      if (!s || !g || inFlight.current) return;
+      inFlight.current = true;
+      setBusy(true);
+      setError("");
+      try {
+        const r = await fetch(`/api/rooms/${s.code}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${s.token}`,
+          },
+          body: JSON.stringify({ action, revision: g.revision, ...extra }),
+        });
+        const data = (await r.json()) as RoomResponse;
+        if (data.game)
+          setGame((old) =>
+            !old || data.game.revision >= old.revision ? data.game : old,
+          );
+        if (!r.ok) throw new Error(data.error);
+        setConnected(true);
+        return true;
+      } catch (e) {
+        setError(
+          e instanceof Error ? e.message : "Connection lost. Please try again.",
+        );
+        return false;
+      } finally {
+        inFlight.current = false;
+        setBusy(false);
+      }
+    },
+    [],
+  );
+  const roll = useCallback(async () => {
+    if (inFlight.current || rolling) return;
+    setRolling(true);
+    chime();
+    if (sessionRef.current) {
+      await onlineAction("roll");
+      setTimeout(() => setRolling(false), 460);
+    } else {
+      setTimeout(() => {
+        setGame((g) => (g ? rollGame(g, randomShells(g.size)) : g));
+        setRolling(false);
+      }, 460);
+    }
+  }, [rolling, chime, onlineAction]);
+  const move = useCallback(
+    async (pawn: number) => {
+      if (inFlight.current) return;
+      chime("move");
+      if (sessionRef.current) await onlineAction("move", { pawn });
+      else setGame((g) => (g ? moveGame(g, pawn) : g));
+    },
+    [onlineAction, chime],
+  );
+  useEffect(() => {
+    if (
+      !game ||
+      game.mode !== "solo" ||
+      game.phase !== "playing" ||
+      !game.players[game.turn].bot ||
+      rolling
+    )
+      return;
+    const timer = setTimeout(
+      () => {
+        if (game.roll === null) void roll();
+        else void move(chooseBotMove(game));
+      },
+      game.roll === null ? 750 : 650,
+    );
+    return () => clearTimeout(timer);
+  }, [game, rolling, roll, move]);
+  async function start() {
+    setError("");
+    if (mode !== "online") {
+      setResume(null);
+      setGame(
+        newGame(
+          size,
+          mode,
+          count,
+          capture,
+          name.trim() || (mode === "local" ? "Player 1" : "You"),
+        ),
+      );
+      return;
+    }
+    if (!name.trim()) {
+      setError("Add your name to take a seat.");
+      document.getElementById("player-name")?.focus();
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          size,
+          captureRequired: capture,
+        }),
+      });
+      const data = (await r.json()) as RoomResponse;
+      if (!r.ok) throw new Error(data.error);
+      const s = { code: data.code, token: data.token, playerId: data.playerId };
+      localStorage.setItem(ROOM_KEY, JSON.stringify(s));
+      setSession(s);
+      setGame(data.game);
+      setConnected(true);
+      history.replaceState(null, "", `?room=${data.code}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not create a room.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function join(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    setError("");
+    setBusy(true);
+    try {
+      const code = roomCode.trim().toUpperCase();
+      const r = await fetch(`/api/rooms/${code}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "join", name: name.trim() }),
+      });
+      const data = (await r.json()) as RoomResponse;
+      if (!r.ok) throw new Error(data.error);
+      const s = { code: data.code, token: data.token, playerId: data.playerId };
+      localStorage.setItem(ROOM_KEY, JSON.stringify(s));
+      setSession(s);
+      setGame(data.game);
+      setModal(null);
+      history.replaceState(null, "", `?room=${code}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not join.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  function clearTable() {
+    setGame(null);
+    setSession(null);
+    setRolling(false);
+    setError("");
+    setShowPath(false);
+    setModal(null);
+    localStorage.removeItem(ROOM_KEY);
+    localStorage.removeItem(LOCAL_KEY);
+    setResume(null);
+    history.replaceState(null, "", location.pathname);
+  }
+  async function leave() {
+    if (session && game) {
+      if (game.phase === "lobby") {
+        if (!(await onlineAction("leave"))) return;
+      } else if (game.phase === "playing" && !game.players[me]?.resigned) {
+        if (!(await onlineAction("resign"))) return;
+      }
+    }
+    clearTable();
+  }
+  async function copyInvite() {
+    if (!session) return;
+    try {
+      await navigator.clipboard.writeText(
+        `${location.origin}${location.pathname}?room=${session.code}`,
+      );
+      setCopied(true);
+      say("Invite link copied. Send it to your friends.");
+      setTimeout(() => setCopied(false), 2200);
+    } catch {
+      say(`Your room code is ${session.code}`);
+    }
+  }
+  function rematch() {
+    if (session) void onlineAction("rematch");
+    else if (game)
+      setGame(
+        newGame(
+          game.size,
+          game.mode,
+          game.players.length,
+          game.captureRequired,
+          name.trim() || (game.mode === "local" ? "Player 1" : "You"),
+        ),
+      );
+  }
+  const title = !game
+    ? "Some games never grow old."
+    : game.phase === "lobby"
+      ? "Good company. Great game."
+      : game.phase === "finished"
+        ? "A game well played."
+        : "Every move tells a story.";
+  return (
+    <div className="app-shell">
+      <header className="site-header">
+        <a
+          href="/"
+          className="brand"
+          onClick={(e) => {
+            e.preventDefault();
+            if (game) setModal("leave");
+            else clearTable();
+          }}
+          aria-label="Chowka Bara home"
+        >
+          <span className="brand-symbol">
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+          <span>
+            chowka bara<span className="brand-period">.</span>
+            <small>THE INDIAN GAME TABLE</small>
+          </span>
+        </a>
+        <nav aria-label="Main navigation">
+          <button
+            className="nav-link nav-active"
+            onClick={() => {
+              if (game) setModal("leave");
+            }}
+          >
+            The game <span>01</span>
+          </button>
+          <button className="nav-link" onClick={() => setModal("rules")}>
+            How to play <ArrowUpRight size={14} />
+          </button>
+          <button
+            className="nav-link about-link"
+            onClick={() => setModal("about")}
+          >
+            Our roots <ArrowUpRight size={14} />
+          </button>
+        </nav>
+        <div className="header-actions">
+          <span className="header-note">
+            <i /> Made for togetherness
+          </span>
+          <button
+            className="icon-button"
+            onClick={() => setSound(!sound)}
+            aria-label={sound ? "Mute sound" : "Enable sound"}
+            title={sound ? "Mute sound" : "Enable sound"}
+          >
+            {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          </button>
+        </div>
+      </header>
+      <main>
+        <section className="page-heading">
+          <div>
+            <div className="eyebrow">
+              <span className="tiny-star">✳</span> A CLASSIC, BACK AT THE TABLE
+            </div>
+            <h1>{title}</h1>
+            <p>
+              {!game
+                ? "A handful of shells. Four little pawns. Endless reasons to play again."
+                : game.phase === "lobby"
+                  ? "Pull up a chair. Invite your people. The courtyard is yours."
+                  : game.phase === "finished"
+                    ? "A little luck, a little strategy. Ready for another round?"
+                    : `${game.size} × ${game.size} ${game.size === 5 ? "Classic" : "Grand"} · ${game.captureRequired ? "Capture to enter" : "Friendly race"} · ${game.mode === "online" ? "Online table" : game.mode === "solo" ? "Practice with the computer" : "Pass & play"}`}
+            </p>
+          </div>
+          <div className="heritage-stamp">
+            <Flower size={24} strokeWidth={1} />
+            <span>
+              ROOTED IN INDIA
+              <br />
+              OPEN TO EVERYONE
+            </span>
+          </div>
+        </section>
+        <div className="game-layout">
+          <section className="table-section" aria-label="Game table">
+            <div className="table-toolbar">
+              <div>
+                <span className="table-status-dot" />{" "}
+                {game?.phase === "lobby"
+                  ? "YOUR PRIVATE TABLE"
+                  : game
+                    ? "THE GAME IS ON"
+                    : "THE COURTYARD"}
+                <span className="toolbar-separator">/</span>
+                <span className="board-label">
+                  {boardGame.size} × {boardGame.size}{" "}
+                  {boardGame.size === 5 ? "CLASSIC" : "GRAND"}
+                </span>
+              </div>
+              <button
+                className={`path-button ${showPath ? "selected" : ""}`}
+                onClick={() => setShowPath(!showPath)}
+                aria-pressed={showPath}
+              >
+                <Route size={14} />
+                <span>{showPath ? "Hide path" : "Show path"}</span>
+              </button>
+            </div>
+            <Board
+              game={boardGame}
+              canPlay={playable}
+              preview={!game || game.phase === "lobby"}
+              showPath={showPath}
+              onMove={move}
+            />
+            <div className="table-bottom">
+              <span className="small-flower">✳</span>
+              <span>
+                {!game
+                  ? "Where a familiar game finds a new home."
+                  : game.lastAction}
+              </span>
+              <span className="table-bottom-number">
+                {game
+                  ? `MOVE ${String(game.revision).padStart(2, "0")}`
+                  : "EST. IN TRADITION"}
+              </span>
+            </div>
+          </section>
+          <aside className="game-panel">
+            {!game ? (
+              <>
+                <div className="panel-title">
+                  <span className="overline">A SEAT FOR EVERYONE</span>
+                  <h2>Play your way.</h2>
+                  <p>Your people, your board, your next game.</p>
+                </div>
+                <div
+                  className="mode-tabs"
+                  role="tablist"
+                  aria-label="Game mode"
+                >
+                  {(
+                    [
+                      { key: "online", label: "Online", icon: Users },
+                      { key: "local", label: "Together", icon: Monitor },
+                      { key: "solo", label: "Practice", icon: Bot },
+                    ] as const
+                  ).map((m) => (
+                    <button
+                      role="tab"
+                      aria-selected={mode === m.key}
+                      key={m.key}
+                      onClick={() => {
+                        setMode(m.key);
+                        setError("");
+                      }}
+                      className={mode === m.key ? "active" : ""}
+                    >
+                      <m.icon size={17} />
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mode-description">
+                  {mode === "online"
+                    ? "Different places. The same table."
+                    : mode === "local"
+                      ? "One screen. Everyone around the table."
+                      : "Find your rhythm against the computer."}
+                </p>
+                <div className="setting-heading">
+                  <label>Choose your board</label>
+                  <span>01</span>
+                </div>
+                <div className="board-options">
+                  {([5, 7] as const).map((n) => (
+                    <button
+                      key={n}
+                      className={`board-option ${size === n ? "active" : ""}`}
+                      onClick={() => setSize(n)}
+                      aria-pressed={size === n}
+                    >
+                      <GridGlyph size={n} />
+                      <span>
+                        <strong>
+                          {n} × {n}
+                        </strong>
+                        <small>{n === 5 ? "The classic" : "The grand"}</small>
+                      </span>
+                      <span className="radio-dot" />
+                    </button>
+                  ))}
+                </div>
+                <div className="settings-row">
+                  <div>
+                    <label htmlFor="player-name">
+                      {mode === "local" ? "First player’s name" : "Your name"}
+                    </label>
+                    <input
+                      id="player-name"
+                      autoComplete="nickname"
+                      maxLength={20}
+                      placeholder={
+                        mode === "online" ? "What should we call you?" : "You"
+                      }
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
+                  {mode !== "online" && (
+                    <div className="players-picker">
+                      <label>Players</label>
+                      <div>
+                        {[2, 3, 4].map((v) => (
+                          <button
+                            key={v}
+                            className={count === v ? "active" : ""}
+                            onClick={() => setCount(v)}
+                            aria-label={`${v} players`}
+                            aria-pressed={count === v}
+                          >
+                            {v}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button
+                  className="rules-toggle"
+                  role="switch"
+                  aria-checked={capture}
+                  onClick={() => setCapture(!capture)}
+                >
+                  <div>
+                    <span>Capture to enter</span>
+                    <small>
+                      {capture
+                        ? "Make a capture to enter the inner ring."
+                        : "A relaxed race. Perfect for a first game."}
+                    </small>
+                  </div>
+                  <span className={`toggle ${capture ? "on" : ""}`}>
+                    <i />
+                  </span>
+                </button>
+                {error && (
+                  <p className="error-message" role="alert">
+                    {error}
+                  </p>
+                )}
+                <button
+                  className="primary-button"
+                  disabled={busy || !hydrated}
+                  onClick={start}
+                >
+                  {busy ? (
+                    <Loader2 className="spinner" size={18} />
+                  ) : mode === "online" ? (
+                    <Users size={18} />
+                  ) : (
+                    <ArrowRight size={18} />
+                  )}
+                  <span>
+                    {busy
+                      ? "Opening your table…"
+                      : mode === "online"
+                        ? "Create a room"
+                        : mode === "local"
+                          ? "Gather & play"
+                          : "Let’s play"}
+                  </span>
+                  {!busy && <ArrowUpRight size={18} />}
+                </button>
+                {mode === "online" ? (
+                  <button
+                    className="join-link"
+                    onClick={() => {
+                      setModal("join");
+                      setError("");
+                    }}
+                  >
+                    Have a room code?{" "}
+                    <strong>
+                      Join a table <ArrowRight size={13} />
+                    </strong>
+                  </button>
+                ) : (
+                  <p className="panel-footnote">
+                    {mode === "solo"
+                      ? "You + " +
+                        (count - 1) +
+                        " computer opponent" +
+                        (count > 2 ? "s" : "") +
+                        " · No account needed"
+                      : "2–4 players · Pass the device each turn"}
+                  </p>
+                )}
+                {resume && (
+                  <button
+                    className="resume-button"
+                    onClick={() => {
+                      setGame(resume);
+                      setResume(null);
+                    }}
+                  >
+                    <RotateCcw size={14} /> Continue your last game{" "}
+                    <ChevronRight size={14} />
+                  </button>
+                )}
+              </>
+            ) : game.phase === "lobby" ? (
+              <>
+                <div className="panel-title">
+                  <span className="overline">THE MORE, THE MERRIER</span>
+                  <h2>Your table is open.</h2>
+                  <p>Share the code. Make room for a rivalry.</p>
+                </div>
+                <div className="room-code-box">
+                  <span>ROOM CODE</span>
+                  <strong>{session?.code}</strong>
+                  <button onClick={copyInvite}>
+                    {copied ? <Check size={16} /> : <Copy size={16} />}{" "}
+                    {copied ? "Copied" : "Copy invite link"}
+                  </button>
+                </div>
+                <div className="setting-heading">
+                  <label>At the table</label>
+                  <span>{game.players.length}/4</span>
+                </div>
+                <div className="lobby-seats">
+                  {Array.from({ length: 4 }, (_, i) => {
+                    const p = game.players[i];
+                    return (
+                      <div key={p?.id || i} className={p ? "filled" : ""}>
+                        {p ? (
+                          <>
+                            <span
+                              className="lobby-avatar"
+                              style={{ background: COLORS[p.color] }}
+                            >
+                              {p.name[0].toUpperCase()}
+                            </span>
+                            <strong>
+                              {p.name}
+                              {p.id === session?.playerId ? " (you)" : ""}
+                            </strong>
+                            <small>{i === 0 ? "Host" : "Joined"}</small>
+                          </>
+                        ) : (
+                          <>
+                            <span className="empty-avatar">
+                              <Users size={16} />
+                            </span>
+                            <span>A seat for a friend</span>
+                            <span className="waiting-dots">···</span>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {error && (
+                  <p className="error-message" role="alert">
+                    {error}
+                  </p>
+                )}
+                {me === 0 ? (
+                  <button
+                    className="primary-button"
+                    disabled={busy || game.players.length < 2}
+                    onClick={() => void onlineAction("start")}
+                  >
+                    <span>
+                      {game.players.length < 2
+                        ? "Waiting for a friend…"
+                        : "Start the game"}
+                    </span>
+                    {busy ? (
+                      <Loader2 size={18} className="spinner" />
+                    ) : (
+                      <ArrowRight size={18} />
+                    )}
+                  </button>
+                ) : (
+                  <div className="waiting-host">
+                    <Loader2 className="spinner" size={16} /> Your host will
+                    start the game.
+                  </div>
+                )}
+                <p className="panel-footnote">
+                  2–4 players · {game.size} × {game.size} ·{" "}
+                  {game.captureRequired ? "Capture to enter" : "Friendly race"}
+                </p>
+                <button
+                  className="subtle-button"
+                  onClick={() => setModal("leave")}
+                >
+                  <DoorOpen size={14} /> Leave table
+                </button>
+              </>
+            ) : game.phase === "finished" ? (
+              <>
+                <div className="winner-medallion">
+                  <Flag size={34} strokeWidth={1.3} />
+                </div>
+                <div className="panel-title winner-title">
+                  <span className="overline">THE COURTYARD CHAMPION</span>
+                  <h2>{game.players[game.winner!].name}</h2>
+                  <p>All roads led home. This one led to victory.</p>
+                </div>
+                <div className="finish-results">
+                  {game.players.map((p, i) => (
+                    <div key={p.id}>
+                      <span
+                        className="result-dot"
+                        style={{ background: COLORS[p.color] }}
+                      />
+                      <strong>{p.name}</strong>
+                      <span>
+                        {i === game.winner
+                          ? "Winner"
+                          : p.resigned
+                            ? "Resigned"
+                            : `${p.pawns.filter((v) => v === playerPath(game.size, p.color).length - 1).length}/4 home`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {!session || me === 0 ? (
+                  <button
+                    className="primary-button"
+                    onClick={rematch}
+                    disabled={busy}
+                  >
+                    <RotateCcw size={17} />
+                    <span>One more round</span>
+                    <ArrowRight size={17} />
+                  </button>
+                ) : (
+                  <p className="panel-footnote">
+                    Your host can open a rematch.
+                  </p>
+                )}
+                <button className="subtle-button" onClick={clearTable}>
+                  Back to the courtyard <ArrowUpRight size={14} />
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="turn-heading">
+                  <span className="overline">
+                    {myTurn
+                      ? "YOUR MOMENT"
+                      : game.players[game.turn].bot
+                        ? "THINKING IT THROUGH"
+                        : "ACROSS THE TABLE"}
+                  </span>
+                  <h2>
+                    <span
+                      className="turn-color"
+                      style={{
+                        background: COLORS[game.players[game.turn].color],
+                      }}
+                    />
+                    {myTurn
+                      ? game.mode === "local"
+                        ? `${game.players[game.turn].name}’s turn`
+                        : "Your move."
+                      : `${game.players[game.turn].name}’s turn`}
+                  </h2>
+                  <p>
+                    {rolling
+                      ? "A little luck is on its way…"
+                      : game.roll !== null
+                        ? myTurn
+                          ? "Choose a glowing pawn to move."
+                          : "Choosing a pawn to move…"
+                        : game.bonus
+                          ? "A bonus throw. Make it count."
+                          : myTurn
+                            ? "Give the cowries a throw."
+                            : "Waiting for their next throw."}
+                  </p>
+                </div>
+                <div className="throw-tray">
+                  <Cowries
+                    count={shellCount(game.size)}
+                    shells={game.shells}
+                    rolling={rolling}
+                  />
+                  <div className="throw-result">
+                    {rolling ? (
+                      <span className="result-wait">TOSSING THE COWRIES</span>
+                    ) : game.roll !== null ? (
+                      <>
+                        <strong>{game.roll}</strong>
+                        <span>
+                          {game.bonus ? "BONUS THROW EARNED" : "SPACES TO MOVE"}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="result-wait">
+                        {game.shells.length
+                          ? `LAST THROW · ${game.shells.filter(Boolean).length || shellCount(game.size) * 2}`
+                          : `${shellCount(game.size)} COWRIES · COUNTLESS POSSIBILITIES`}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  className="primary-button roll-button"
+                  disabled={!playable || game.roll !== null}
+                  onClick={() => void roll()}
+                >
+                  <Sparkles size={18} />
+                  <span>
+                    {rolling
+                      ? "Shells in the air…"
+                      : game.roll !== null
+                        ? "Choose your pawn"
+                        : myTurn
+                          ? "Throw the cowries"
+                          : "Their turn to throw"}
+                  </span>
+                  {!rolling && game.roll === null && (
+                    <span className="keyboard-hint">↵</span>
+                  )}
+                </button>
+                {game.roll !== null && myTurn && (
+                  <div className="pawn-picker">
+                    {legalMoves(game).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => void move(p)}
+                        disabled={!playable}
+                      >
+                        <span
+                          style={{
+                            background: COLORS[game.players[game.turn].color],
+                          }}
+                        >
+                          {p + 1}
+                        </span>
+                        Pawn {p + 1}
+                        <ArrowRight size={12} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {error && (
+                  <p className="error-message" role="alert">
+                    {error}
+                  </p>
+                )}
+                <div className="game-progress">
+                  <div className="setting-heading">
+                    <label>The race home</label>
+                    <span>
+                      <Flag size={13} />
+                    </span>
+                  </div>
+                  {game.players.map((p, i) => {
+                    const end = playerPath(game.size, p.color).length - 1;
+                    return (
+                      <div
+                        className={`progress-player ${i === game.turn ? "current" : ""}`}
+                        key={p.id}
+                      >
+                        <div>
+                          <span
+                            className="result-dot"
+                            style={{ background: COLORS[p.color] }}
+                          />
+                          <strong>
+                            {p.name}
+                            {p.id === session?.playerId ? " (you)" : ""}
+                          </strong>
+                          <small>
+                            {p.resigned
+                              ? "Resigned"
+                              : `${p.pawns.filter((v) => v === end).length}/4`}
+                          </small>
+                        </div>
+                        <div className="progress-track">
+                          <i
+                            style={{
+                              width: `${(p.pawns.reduce((a, v) => a + v, 0) / (end * 4)) * 100}%`,
+                              background: COLORS[p.color],
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="activity">
+                  <span className="overline">AROUND THE TABLE</span>
+                  <div aria-live="polite">
+                    {game.logs
+                      .slice(-3)
+                      .reverse()
+                      .map((l, i) => (
+                        <p
+                          key={`${l.id}-${i}`}
+                          className={i === 0 ? "latest" : ""}
+                        >
+                          <i
+                            style={{
+                              background:
+                                COLORS[game.players[l.player]?.color || 0],
+                            }}
+                          />
+                          {l.text}
+                        </p>
+                      ))}
+                  </div>
+                </div>
+                <div className="playing-actions">
+                  <button onClick={() => setModal("rules")}>
+                    <CircleHelp size={14} /> Rules
+                  </button>
+                  {session && (
+                    <button onClick={copyInvite}>
+                      <Link2 size={14} /> Invite
+                    </button>
+                  )}
+                  <button onClick={() => setModal("leave")}>
+                    <DoorOpen size={14} /> Leave
+                  </button>
+                </div>
+              </>
+            )}
+            {session && (
+              <div
+                className={`connection-status ${!connected ? "offline" : ""}`}
+              >
+                {connected ? <Wifi size={12} /> : <WifiOff size={12} />}{" "}
+                {connected
+                  ? "Connected to your table"
+                  : "Reconnecting automatically…"}
+                <span>{session.code}</span>
+              </div>
+            )}
+          </aside>
+        </div>
+        <section className="how-strip" aria-label="The game in three steps">
+          <div className="how-intro">
+            <span className="small-flower">✳</span>
+            <span>
+              Simple to learn.
+              <br />
+              <strong>Hard to leave.</strong>
+            </span>
+          </div>
+          <button onClick={() => setModal("rules")}>
+            <span className="step-number">01</span>
+            <span>
+              <strong>Throw a little luck.</strong>
+              <small>Toss the cowries. Find your number.</small>
+            </span>
+            <ArrowUpRight size={16} />
+          </button>
+          <button onClick={() => setModal("rules")}>
+            <span className="step-number">02</span>
+            <span>
+              <strong>Make your move.</strong>
+              <small>Race, capture, and take the safe road.</small>
+            </span>
+            <ArrowUpRight size={16} />
+          </button>
+          <button onClick={() => setModal("rules")}>
+            <span className="step-number">03</span>
+            <span>
+              <strong>Bring it all home.</strong>
+              <small>Four pawns. One center. Your victory.</small>
+            </span>
+            <ArrowUpRight size={16} />
+          </button>
+        </section>
+      </main>
+      <footer>
+        <span>From Indian courtyards to wherever you are.</span>
+        <button onClick={() => setModal("about")}>
+          Tradition, with a new connection. <ArrowUpRight size={12} />
+        </button>
+        <span className="footer-word">
+          ಆಡೋಣ ಬನ್ನಿ <Flower size={14} />
+        </span>
+      </footer>
+      {notice && (
+        <div className="toast" role="status">
+          <CheckCircle2 size={17} />
+          {notice}
+        </div>
+      )}
+      {modal && (
+        <ModalDialog
+          onClose={() => {
+            setModal(null);
+            setError("");
+          }}
+          title={
+            modal === "rules"
+              ? "A small guide to a great game."
+              : modal === "join"
+                ? "There’s a seat for you."
+                : modal === "leave"
+                  ? "Step away from the table?"
+                  : "Old roots. New connections."
+          }
+        >
+          {modal === "join" ? (
+            <form onSubmit={join}>
+              <p className="modal-lead">
+                A familiar name and a six-character code. That’s all you need.
+              </p>
+              <label className="field-label" htmlFor="join-name">
+                Your name
+              </label>
+              <input
+                id="join-name"
+                required
+                maxLength={20}
+                autoComplete="nickname"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="What should we call you?"
+              />
+              <label className="field-label" htmlFor="room-code">
+                Room code
+              </label>
+              <input
+                id="room-code"
+                className="code-input"
+                required
+                minLength={6}
+                maxLength={6}
+                pattern="[a-zA-Z2-9]{6}"
+                autoCapitalize="characters"
+                autoComplete="off"
+                value={roomCode}
+                onChange={(e) =>
+                  setRoomCode(
+                    e.target.value.toUpperCase().replace(/[^A-Z2-9]/g, ""),
+                  )
+                }
+                placeholder="ABC234"
+              />
+              {error && (
+                <p className="error-message" role="alert">
+                  {error}
+                </p>
+              )}
+              <button type="submit" className="primary-button" disabled={busy}>
+                {busy ? (
+                  <Loader2 size={18} className="spinner" />
+                ) : (
+                  <Users size={18} />
+                )}
+                <span>{busy ? "Finding your table…" : "Join the table"}</span>
+                <ArrowRight size={17} />
+              </button>
+            </form>
+          ) : modal === "leave" ? (
+            <>
+              <p className="modal-lead">
+                {session && game?.phase === "playing"
+                  ? "Leaving resigns your seat in this game. Your friends can keep playing."
+                  : session
+                    ? "You’ll leave this room. The next player becomes host if you opened it."
+                    : "Your local game is saved automatically. You can continue it from the courtyard."}
+              </p>
+              <div className="dialog-actions">
+                <button
+                  className="secondary-button"
+                  onClick={() => setModal(null)}
+                >
+                  Stay & play
+                </button>
+                <button
+                  className="primary-button"
+                  disabled={busy}
+                  onClick={() => {
+                    if (!session) {
+                      setGame(null);
+                      setModal(null);
+                      setResume(game);
+                    } else void leave();
+                  }}
+                >
+                  Leave table <ArrowRight size={16} />
+                </button>
+              </div>
+              {error && (
+                <p className="error-message" role="alert">
+                  {error}
+                </p>
+              )}
+            </>
+          ) : modal === "about" ? (
+            <div className="about-content">
+              <Flower size={58} strokeWidth={0.8} />
+              <p>
+                Before screens, there were courtyards. A board drawn on the
+                floor, a handful of cowries, and a few people who always had
+                time for one more game.
+              </p>
+              <p>
+                Chowka Bara carries that spirit from Karnataka. Related
+                traditions are known as Ashta Chamma, Katte Mane, and other
+                names across India. Each family brings its own little rules.
+              </p>
+              <p>
+                This is our invitation to keep playing. Familiar at heart, made
+                for friends near and far.
+              </p>
+              <a
+                href="https://rollthedice.in/pages/how-to-play-chowka-bara-7-house"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Explore the traditional game <ArrowUpRight size={14} />
+              </a>
+              <small>
+                Local and practice games stay on your device. Online rooms store
+                names and game state and expire after 24 hours. No account is
+                required by the game; hosting access rules may still apply.
+              </small>
+            </div>
+          ) : (
+            <RulesGuide size={game?.size || size} />
+          )}
+        </ModalDialog>
+      )}
+      {game?.phase === "playing" && !modal && (
+        <div className="mobile-turn-bar">
+          <div>
+            <span
+              className="result-dot"
+              style={{ background: COLORS[game.players[game.turn].color] }}
+            />
+            <strong>
+              {myTurn ? "Your turn" : `${game.players[game.turn].name}’s turn`}
+            </strong>
+            <small>
+              {rolling
+                ? "Tossing…"
+                : game.roll !== null
+                  ? `Move ${game.roll} spaces`
+                  : "Throw the cowries"}
+            </small>
+          </div>
+          {myTurn && game.roll !== null ? (
+            <div className="mobile-pawns">
+              {legalMoves(game).map((p) => (
+                <button
+                  key={p}
+                  disabled={!playable}
+                  onClick={() => void move(p)}
+                  aria-label={`Move pawn ${p + 1}`}
+                >
+                  <span
+                    style={{
+                      background: COLORS[game.players[game.turn].color],
+                    }}
+                  >
+                    {p + 1}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button
+              className="primary-button"
+              disabled={!playable || game.roll !== null}
+              onClick={() => void roll()}
+            >
+              <Sparkles size={16} />
+              {rolling ? "Tossing…" : myTurn ? "Throw cowries" : "Waiting…"}
+              <ArrowRight size={15} />
+            </button>
+          )}
+        </div>
+      )}
+      <KeyboardThrow
+        enabled={playable && game?.roll === null && !modal}
+        onThrow={roll}
+      />
+    </div>
+  );
+}
+function KeyboardThrow({
+  enabled,
+  onThrow,
+}: {
+  enabled: boolean;
+  onThrow: () => void;
+}) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (
+        enabled &&
+        e.key === "Enter" &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLButtonElement)
+      ) {
+        e.preventDefault();
+        onThrow();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [enabled, onThrow]);
+  return null;
+}
+function ModalDialog({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const d = ref.current;
+    d?.showModal();
+    return () => d?.close();
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      className="modal"
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="modal-header">
+        <span className="overline">CHOWKA BARA · THE GAME TABLE</span>
+        <button
+          className="icon-button"
+          onClick={onClose}
+          aria-label="Close dialog"
+        >
+          <X size={20} />
+        </button>
+      </div>
+      <h2>{title}</h2>
+      {children}
+    </dialog>
+  );
+}
+function RulesGuide({ size }: { size: BoardSize }) {
+  const [board, setBoard] = useState<BoardSize>(size);
+  const shells = shellCount(board);
+  return (
+    <div className="rules-guide">
+      <div className="rules-board-tabs">
+        {([5, 7] as const).map((n) => (
+          <button
+            className={board === n ? "active" : ""}
+            onClick={() => setBoard(n)}
+            key={n}
+          >
+            {n} × {n} {n === 5 ? "Classic" : "Grand"}
+          </button>
+        ))}
+      </div>
+      <p className="modal-lead">
+        2–4 players. Four pawns each. Race around the board and spiral into the
+        center.
+      </p>
+      <ol>
+        <li>
+          <strong>Throw the cowries</strong>
+          <p>
+            {shells} shells for this board. Each open mouth scores 1. All open
+            scores {shells}; all closed scores {shells * 2}. Both earn another
+            throw after your move.
+          </p>
+        </li>
+        <li>
+          <strong>Choose one pawn</strong>
+          <p>
+            Every pawn begins on your colored home square. Move any one pawn by
+            the full throw. Follow the numbered path: around the outside, then
+            spiral inward. Use “Show path” at the table.
+          </p>
+        </li>
+        <li>
+          <strong>Capture & find shelter</strong>
+          <p>
+            Land exactly on a rival to send their pawns back to the start and
+            earn a bonus throw. Crossed squares and the center are safe. Pawns
+            may share squares; this edition has no pairing or blockade rules.
+          </p>
+        </li>
+        <li>
+          <strong>Pick your tradition</strong>
+          <p>
+            Friendly race allows everyone into the inner ring. Turn on “Capture
+            to enter” to require one capture per player before any of their
+            pawns can leave the outer ring.
+          </p>
+        </li>
+        <li>
+          <strong>Bring all four home</strong>
+          <p>
+            Reach the center by exact count. Bringing a pawn home earns a throw.
+            If you cannot move, your throw is skipped; a bonus throw is kept.
+            The first player with all four home wins.
+          </p>
+        </li>
+      </ol>
+      <div className="rules-note">
+        <ShieldCheck size={21} />
+        <p>
+          Families play with different house rules. This edition resolves one
+          throw at a time, uses nine safe houses, and has no three-bonus
+          penalty.
+        </p>
+      </div>
+      <a
+        className="rules-source"
+        href="https://rollthedice.in/pages/how-to-play-chowka-bara-7-house"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Based on Karnataka’s cowrie game tradition <ArrowUpRight size={13} />
+      </a>
+    </div>
+  );
+}
