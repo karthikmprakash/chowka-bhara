@@ -49,6 +49,7 @@ import { Board } from "./board";
 import { Cowries } from "./cowries";
 import { usePlayView } from "./use-play-view";
 import { latestThrow, type ThrowSnapshot } from "@/lib/presentation";
+import { setKeepAwake } from "@/lib/native";
 import { PreferencesProvider, usePreferences } from "./preferences";
 import {
   COLORS,
@@ -211,6 +212,10 @@ function GameScreen() {
     setNotice(text);
   };
   const { play: chime, unlock: unlockAudio } = useGameAudio(sound);
+  // Hold the screen awake on a phone while a game is underway.
+  useEffect(() => {
+    setKeepAwake(game?.phase === "playing");
+  }, [game?.phase]);
   const toggleSound = () => {
     if (!sound) unlockAudio();
     setSound(!sound);

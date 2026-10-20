@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
+import { hapticThrow } from "@/lib/native";
 export function useGameAudio(enabled: boolean) {
   const context = useRef<AudioContext | null>(null);
   const buffer = useRef<Promise<AudioBuffer> | null>(null);
@@ -29,6 +30,7 @@ export function useGameAudio(enabled: boolean) {
     (kind = "roll") => {
       if (!active.current) return;
       try {
+        if (kind === "roll") hapticThrow();
         const { ctx, ready } = prepare();
         void ready
           .then((audio) => {

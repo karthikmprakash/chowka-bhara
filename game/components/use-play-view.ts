@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Game } from "@/lib/game";
+import { setImmersive as setNativeImmersive, isNativeApp } from "@/lib/native";
 export function usePlayView(game: Game | null) {
   const rootRef = useRef<HTMLDivElement>(null),
     lastPhase = useRef(""),
@@ -9,8 +10,11 @@ export function usePlayView(game: Game | null) {
     [immersive, setImmersive] = useState(false),
     [canImmerse, setCanImmerse] = useState(false);
   useEffect(() => {
+    // The native shell can always give the board the whole screen, even where
+    // the web fullscreen API is unavailable.
     setCanImmerse(
-      !!document.fullscreenEnabled && !!rootRef.current?.requestFullscreen,
+      isNativeApp() ||
+        (!!document.fullscreenEnabled && !!rootRef.current?.requestFullscreen),
     );
   }, []);
   useEffect(() => {
@@ -39,12 +43,15 @@ export function usePlayView(game: Game | null) {
   }, [focused]);
   useEffect(() => {
     const changed = () => {
-      setImmersive(document.fullscreenElement === rootRef.current);
-      if (document.fullscreenElement === rootRef.current)
+      if (document.fullscreenElement === rootRef.current) {
         nativeFocus.current = true;
-      else if (nativeFocus.current) {
+        setImmersive(true);
+        setNativeImmersive(true);
+      } else if (nativeFocus.current) {
         nativeFocus.current = false;
         setFocused(false);
+        setImmersive(false);
+        setNativeImmersive(false);
       }
     };
     document.addEventListener("fullscreenchange", changed);
@@ -52,20 +59,34 @@ export function usePlayView(game: Game | null) {
   }, []);
   const exitFocus = useCallback(() => {
     setFocused(false);
+    setImmersive(false);
+    setNativeImmersive(false);
     if (document.fullscreenElement === rootRef.current)
       void document.exitFullscreen().catch(() => {});
   }, []);
+  useEffect(() => {
+    // The native shell sends this when the hardware back button is pressed
+    // while the board owns the screen.
+    const leave = () => exitFocus();
+    document.addEventListener("chowka:exit-focus", leave);
+    return () => document.removeEventListener("chowka:exit-focus", leave);
+  }, [exitFocus]);
   const toggleFocus = useCallback(() => {
     if (focused) {
       exitFocus();
       return;
     }
     setFocused(true);
+    setImmersive(true);
+    // The native shell hides the system bars; browsers take the request below.
+    setNativeImmersive(true);
     // iPhone Safari can use the same viewport-filling layout without this API.
     const request = rootRef.current?.requestFullscreen;
     if (request) void request.call(rootRef.current).catch(() => {});
   }, [focused, exitFocus]);
   const immerse = useCallback(() => {
+    setImmersive(true);
+    setNativeImmersive(true);
     const node = rootRef.current;
     if (node?.requestFullscreen) void node.requestFullscreen().catch(() => {});
   }, []);
