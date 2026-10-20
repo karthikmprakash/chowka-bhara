@@ -1,0 +1,17 @@
+{
+  "appId": "com.chowkabara.game",
+  "appName": "Chowka Bara",
+  "webDir": "game/dist/client",
+  "server": {
+    "url": "https://chowka-bara.mkarthikprakash-work.workers.dev",
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "LIGHT",
+      "backgroundColor": "#f7f5ee"
+    }
+  }
+}

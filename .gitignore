@@ -1,6 +1,9 @@
 # macOS
 .DS_Store
 
+# dependencies
+node_modules/
+
 # Deploy archives (build outputs, not source)
 *.tar.gz
 
