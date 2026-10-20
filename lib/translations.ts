@@ -1,5 +1,12 @@
 export type Language = "en" | "kn";
 export const kannada: Record<string, string> = {
+  "Player settings": "ಆಟಗಾರರ ಆಯ್ಕೆಗಳು",
+  Start: "ಆರಂಭ",
+  "Capture to unlock": "ಕಾಯಿ ಹೊಡೆದು ಒಳಗೆ ಬನ್ನಿ",
+  "Outer circle → Inner circle → Home": "ಹೊರಸುತ್ತು → ಒಳಸುತ್ತು → ಗುರಿ",
+  "Follow the outer circle. Capture to unlock the inner circle.":
+    "ಹೊರಸುತ್ತಿನ ದಾರಿಯಲ್ಲಿ ಸಾಗಿರಿ. ಕಾಯಿ ಹೊಡೆದ ಬಳಿಕ ಒಳಸುತ್ತಿಗೆ ಬನ್ನಿ.",
+  "Moving pawn…": "ಕಾಯಿ ಸಾಗುತ್ತಿದೆ…",
   "Play assistance": "ಆಟದ ಸಹಾಯ",
   Beginner: "ಆರಂಭಿಕ",
   Advanced: "ಅನುಭವಿ",

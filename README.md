@@ -81,3 +81,9 @@ Throw audio is an excerpt of bassronin's CC0 **Shell Drop**, an actual seashell 
 The assistance preference is personal and saved locally, so online players can choose independently. Beginner shows legal pawn highlights, landing previews, a move picker, and an explicitly enabled animated direction trail. Advanced hides these hints; all unfinished pawns of the current player remain selectable. Invalid selections explain the rule without consuming the throw or changing the turn. Both modes enforce identical rules on the server and locally; legacy relaxed games also follow the mandatory capture gate.
 
 Focused board sizing uses its actual available stage height and width via container units, reserving space for complete top and bottom player profiles. Throw button labels and secondary text use explicit high-contrast colors in both themes.
+
+### Pawn travel and route guide
+
+Observed pawn moves play square by square, including outer corners and the inward turn. The authoritative game updates immediately; a short visual snapshot holds captures and the board's turn handoff until arrival. Each leg takes at most 150 ms and a whole long throw takes at most 840 ms, plus a 16 ms departure frame. Further throws and moves wait for arrival; bot turns respect that window. Animation timers cancel on unmount and resynchronize on a hidden tab or a reduced-motion preference. Opening a game, rematching, and multiple missed moves synchronize directly instead of inventing a route.
+
+Show path uses a colored outer route, a quiet inner route with a capture gate, and a moving direction marker. Capturing unlocks the inner route. There are no per-square numbers. Beginner/Advanced choices now appear only in setup and the player settings dialog, reached through the portrait button.

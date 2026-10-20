@@ -1,5 +1,8 @@
 "use client";
 import { memo, useState, type CSSProperties } from "react";
+import { RouteGuide } from "./route-guide";
+import type { PawnTravel } from "@/lib/presentation";
+import { LockKeyhole } from "lucide-react";
 import { Avatar, portraitOf } from "./avatar";
 import { usePreferences } from "./preferences";
 import { Flower, Flag, Route } from "lucide-react";
@@ -20,6 +23,7 @@ interface Props {
   showPath: boolean;
   onMove: (pawn: number) => void;
   throwOverlay?: React.ReactNode;
+  travel?: PawnTravel | null;
 }
 export const Board = memo(function Board({
   game: g,
@@ -28,6 +32,7 @@ export const Board = memo(function Board({
   showPath,
   onMove,
   throwOverlay,
+  travel,
 }: Props) {
   const { t, advanced } = usePreferences();
   const [hover, setHover] = useState<number | null>(null);
@@ -102,6 +107,11 @@ export const Board = memo(function Board({
           <div
             className="board-grid"
             role="group"
+            style={
+              {
+                "--pawn-step-ms": `${travel?.stepMs ?? 150}ms`,
+              } as CSSProperties
+            }
             aria-label={t(`${n} by ${n} Chowka Bara board`)}
           >
             {Array.from({ length: n * n }, (_, i) => {
@@ -142,71 +152,20 @@ export const Board = memo(function Board({
                     />
                   )}
                   {start !== null && <span className="start-mark" />}
-                  {showPath && !advanced && !home && (
-                    <span className="path-step">{step}</span>
-                  )}
+                  {showPath &&
+                    !advanced &&
+                    !current.captures &&
+                    step === 4 * (n - 1) && (
+                      <LockKeyhole
+                        className="route-gate"
+                        size={15}
+                        aria-label={t("Capture to unlock")}
+                      />
+                    )}
                 </div>
               );
             })}
-            {showPath && !advanced && (
-              <svg
-                className="direction-trail"
-                viewBox={`0 0 ${n * 100} ${n * 100}`}
-                aria-hidden="true"
-                key={`route-${n}-${current.color}`}
-              >
-                <defs>
-                  <marker
-                    id={`route-arrow-${current.color}`}
-                    viewBox="0 0 10 10"
-                    refX="8"
-                    refY="5"
-                    markerWidth="5"
-                    markerHeight="5"
-                    orient="auto-start-reverse"
-                  >
-                    <path
-                      d="M 1 1 L 9 5 L 1 9"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                  </marker>
-                </defs>
-                <polyline
-                  className="route-line"
-                  points={path
-                    .map(([r, c]) => `${c * 100 + 50},${r * 100 + 50}`)
-                    .join(" ")}
-                  fill="none"
-                />
-                {path.slice(1).map(([r, c], i) => {
-                  const [pr, pc] = path[i];
-                  return (
-                    <line
-                      key={i}
-                      x1={(pc * 100 + c * 100) / 2 + 50 - (c - pc) * 12}
-                      y1={(pr * 100 + r * 100) / 2 + 50 - (r - pr) * 12}
-                      x2={(pc * 100 + c * 100) / 2 + 50 + (c - pc) * 12}
-                      y2={(pr * 100 + r * 100) / 2 + 50 + (r - pr) * 12}
-                      markerEnd={`url(#route-arrow-${current.color})`}
-                    />
-                  );
-                })}
-                <circle className="route-bead" r="7">
-                  <animateMotion
-                    dur={`${path.length * 0.17}s`}
-                    repeatCount="indefinite"
-                    path={path
-                      .map(
-                        ([r, c], i) =>
-                          `${i === 0 ? "M" : "L"} ${c * 100 + 50} ${r * 100 + 50}`,
-                      )
-                      .join(" ")}
-                  />
-                </circle>
-              </svg>
-            )}
+            {showPath && !advanced && <RouteGuide game={g} />}
             {Array.from(stacks.entries()).flatMap(([, tokens]) =>
               tokens.map((token, stack) => {
                 const p = g.players[token.player],
@@ -234,7 +193,7 @@ export const Board = memo(function Board({
                 return (
                   <button
                     key={`${p.id}-${token.pawn}`}
-                    className={`pawn grain-${p.color} ${eligible && !advanced ? "movable" : ""} ${token.home ? "arrived" : ""}`}
+                    className={`pawn grain-${p.color} ${eligible && !advanced ? "movable" : ""} ${token.home ? "arrived" : ""} ${travel?.player === token.player && travel.pawn === token.pawn ? "is-travelling" : ""}`}
                     disabled={!eligible}
                     onClick={() => onMove(token.pawn)}
                     onMouseEnter={() => setHover(token.pawn)}

@@ -42,6 +42,8 @@ import {
 import { Avatar, AvatarPicker, portraitOf } from "./avatar";
 import { ThrowButton } from "./throw-button";
 import { useGameAudio } from "./use-game-audio";
+import { usePawnTravel } from "./use-pawn-travel";
+import { RouteExplanation } from "./route-guide";
 import { ExperiencePicker } from "./experience-picker";
 import { Board } from "./board";
 import { Cowries } from "./cowries";
@@ -107,6 +109,9 @@ function GameScreen() {
     [avatar, setAvatar] = useState(0),
     [game, setGame] = useState<Game | null>(null),
     [session, setSession] = useState<Session | null>(null);
+  const { visualGame, moving: pawnMoving, travel } = usePawnTravel(game);
+  const movingRef = useRef(pawnMoving);
+  movingRef.current = pawnMoving;
   const [modal, setModal] = useState<Modal>(null),
     [roomCode, setRoomCode] = useState(""),
     [busy, setBusy] = useState(false),
@@ -190,7 +195,7 @@ function GameScreen() {
       ),
     [size, mode, count, capture, name, avatar],
   );
-  const boardGame = game || demo;
+  const boardGame = visualGame || game || demo;
   const me =
     session && game
       ? game.players.findIndex((p) => p.id === session.playerId)
@@ -201,7 +206,7 @@ function GameScreen() {
     (game.mode === "local" ||
       (game.mode === "solo" && !game.players[game.turn].bot) ||
       (game.mode === "online" && !!session && game.turn === me));
-  const playable = myTurn && !busy && !rolling;
+  const playable = myTurn && !busy && !rolling && !pawnMoving;
   const say = (text: string) => {
     setNotice(text);
   };
@@ -386,7 +391,8 @@ function GameScreen() {
   );
   const roll = useCallback(
     async (instant = false) => {
-      if (inFlight.current || rolling || !gameRef.current) return;
+      if (inFlight.current || rolling || movingRef.current || !gameRef.current)
+        return;
       setStillThrow(instant);
       setShowShot(false);
       setRolling(true);
@@ -422,7 +428,7 @@ function GameScreen() {
   );
   const move = useCallback(
     async (pawn: number) => {
-      if (inFlight.current) return;
+      if (inFlight.current || movingRef.current) return;
       const g = gameRef.current;
       if (!g) return;
       setShowShot(false);
@@ -449,6 +455,7 @@ function GameScreen() {
       game.mode !== "solo" ||
       game.phase !== "playing" ||
       !game.players[game.turn].bot ||
+      pawnMoving ||
       rolling
     )
       return;
@@ -460,7 +467,7 @@ function GameScreen() {
       game.roll === null ? 750 : 650,
     );
     return () => clearTimeout(timer);
-  }, [game, rolling, roll, move]);
+  }, [game, rolling, pawnMoving, roll, move]);
   async function start() {
     setError("");
     if (mode !== "online") {
@@ -604,7 +611,7 @@ function GameScreen() {
             <button
               className="profile-button"
               onClick={() => setModal("profile")}
-              aria-label={t("Choose your portrait")}
+              aria-label={t("Player settings")}
             >
               <Avatar value={portraitOf(game.players[me] || game.players[0])} />
             </button>
@@ -753,7 +760,7 @@ function GameScreen() {
           <button
             className="profile-button"
             onClick={() => setModal("profile")}
-            aria-label={t("Choose your portrait")}
+            aria-label={t("Player settings")}
           >
             <Avatar
               value={
@@ -835,7 +842,6 @@ function GameScreen() {
                     </span>
                   </button>
                 )}
-                <ExperiencePicker compact />
                 {!advanced && (
                   <button
                     className={`path-button ${showPath ? "selected" : ""}`}
@@ -848,8 +854,10 @@ function GameScreen() {
                 )}
               </div>
             </div>
+            {showPath && !advanced && <RouteExplanation game={boardGame} />}
             <Board
               game={boardGame}
+              travel={travel}
               canPlay={playable}
               preview={!game || game.phase === "lobby"}
               showPath={showPath && !advanced}
@@ -928,15 +936,17 @@ function GameScreen() {
                 </strong>
                 <span>
                   {t(
-                    rolling
-                      ? "Tossing…"
-                      : game.roll !== null
-                        ? `Move ${game.roll} spaces`
-                        : game.bonus
-                          ? "A bonus throw. Make it count."
-                          : myTurn
-                            ? "Throw the cowries"
-                            : "Waiting for their next throw.",
+                    pawnMoving
+                      ? "Moving pawn…"
+                      : rolling
+                        ? "Tossing…"
+                        : game.roll !== null
+                          ? `Move ${game.roll} spaces`
+                          : game.bonus
+                            ? "A bonus throw. Make it count."
+                            : myTurn
+                              ? "Throw the cowries"
+                              : "Waiting for their next throw.",
                   )}
                 </span>
               </div>
@@ -1328,7 +1338,9 @@ function GameScreen() {
                         ? "A little luck is on its way…"
                         : game.roll !== null
                           ? myTurn
-                            ? "Choose a glowing pawn to move."
+                            ? advanced
+                              ? "Select a pawn on the board."
+                              : "Choose a glowing pawn to move."
                             : "Choosing a pawn to move…"
                           : game.bonus
                             ? "A bonus throw. Make it count."
@@ -1377,13 +1389,15 @@ function GameScreen() {
                   rolling={rolling}
                   onClick={() => void roll()}
                   label={
-                    rolling
-                      ? "Shells in the air…"
-                      : game.roll !== null
-                        ? "Choose your pawn"
-                        : myTurn
-                          ? "Throw the cowries"
-                          : "Their turn to throw"
+                    pawnMoving
+                      ? "Moving pawn…"
+                      : rolling
+                        ? "Shells in the air…"
+                        : game.roll !== null
+                          ? "Choose your pawn"
+                          : myTurn
+                            ? "Throw the cowries"
+                            : "Their turn to throw"
                   }
                 />
                 {game.roll !== null && myTurn && !advanced && (
@@ -1571,7 +1585,7 @@ function GameScreen() {
           }}
           title={t(
             modal === "profile"
-              ? "Your face at the table"
+              ? "Player settings"
               : modal === "rules"
                 ? "A small guide to a great game."
                 : modal === "join"
@@ -1582,10 +1596,13 @@ function GameScreen() {
           )}
         >
           {modal === "profile" ? (
-            <AvatarPicker
-              value={game?.players[me]?.avatar ?? avatar}
-              onChange={chooseAvatar}
-            />
+            <>
+              <AvatarPicker
+                value={game?.players[me]?.avatar ?? avatar}
+                onChange={chooseAvatar}
+              />
+              <ExperiencePicker />
+            </>
           ) : modal === "join" ? (
             <form onSubmit={join}>
               <p className="modal-lead">
@@ -1739,17 +1756,20 @@ function GameScreen() {
               </strong>
               <small>
                 {t(
-                  rolling
-                    ? "Tossing…"
-                    : game.roll !== null
-                      ? `Move ${game.roll} spaces`
-                      : "Throw the cowries",
+                  pawnMoving
+                    ? "Moving pawn…"
+                    : rolling
+                      ? "Tossing…"
+                      : game.roll !== null
+                        ? `Move ${game.roll} spaces`
+                        : "Throw the cowries",
                 )}
               </small>
             </div>
             {game.phase === "finished" ? (
               <button
                 className="primary-button"
+                disabled={pawnMoving}
                 onClick={() => {
                   exitFocus();
                   requestAnimationFrame(() =>
@@ -1794,7 +1814,13 @@ function GameScreen() {
                 rolling={rolling}
                 onClick={() => void roll()}
                 label={
-                  rolling ? "Tossing…" : myTurn ? "Throw cowries" : "Waiting…"
+                  pawnMoving
+                    ? "Moving pawn…"
+                    : rolling
+                      ? "Tossing…"
+                      : myTurn
+                        ? "Throw cowries"
+                        : "Waiting…"
                 }
               />
             )}

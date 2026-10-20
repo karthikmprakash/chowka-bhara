@@ -1,20 +1,7 @@
 "use client";
 import { usePreferences } from "./preferences";
-export function ExperiencePicker({ compact = false }: { compact?: boolean }) {
+export function ExperiencePicker() {
   const { t, advanced, setAdvanced } = usePreferences();
-  if (compact)
-    return (
-      <label className="experience-compact">
-        <span className="sr-only">{t("Play assistance")}</span>
-        <select
-          value={advanced ? "advanced" : "beginner"}
-          onChange={(e) => setAdvanced(e.target.value === "advanced")}
-        >
-          <option value="beginner">{t("Beginner")}</option>
-          <option value="advanced">{t("Advanced")}</option>
-        </select>
-      </label>
-    );
   return (
     <fieldset className="experience-picker">
       <legend>{t("Play assistance")}</legend>
