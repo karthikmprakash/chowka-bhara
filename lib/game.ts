@@ -112,7 +112,7 @@ export function newGame(
   size: BoardSize = 5,
   mode: Mode = "solo",
   count = 2,
-  captureRequired = false,
+  _captureRequired = true,
   name = "You",
   avatar = 0,
 ): Game {
@@ -120,7 +120,7 @@ export function newGame(
   return {
     size,
     mode,
-    captureRequired,
+    captureRequired: true,
     players: colors.map((c, i) => ({
       ...makePlayer(
         i === 0
@@ -151,18 +151,42 @@ export function newGame(
     lastAction: "Welcome to the table",
   };
 }
+export function moveError(g: Game, pawn: number): string | null {
+  if (g.phase !== "playing" || g.roll === null)
+    return "Throw the cowries before choosing a pawn.";
+  const p = g.players[g.turn],
+    path = playerPath(g.size, p.color),
+    end = path.length - 1;
+  if (!Number.isInteger(pawn) || pawn < 0 || pawn >= p.pawns.length)
+    return "Choose one of your pawns.";
+  const position = p.pawns[pawn],
+    destination = position + g.roll;
+  if (position === end) return "This pawn is already home.";
+  if (destination > end) return "You need an exact throw to reach home.";
+  if (p.captures === 0 && destination >= 4 * (g.size - 1))
+    return "Capture an opponent before entering the inner circle.";
+  // Compare physical cells, not path indices: the 7-house route revisits its inner entry.
+  const point = path[destination];
+  if (
+    destination !== end &&
+    p.pawns.some(
+      (v, i) =>
+        i !== pawn &&
+        v !== end &&
+        path[v][0] === point[0] &&
+        path[v][1] === point[1],
+    )
+  )
+    return "That house already holds one of your pawns.";
+  return null;
+}
 export function legalMoves(g: Game): number[] {
   if (g.phase !== "playing" || g.roll === null) return [];
-  const p = g.players[g.turn],
-    end = playerPath(g.size, p.color).length - 1;
-  return p.pawns.flatMap((v, i) =>
-    v < end &&
-    v + g.roll! <= end &&
-    (!g.captureRequired || p.captures > 0 || v + g.roll! < 4 * (g.size - 1))
-      ? [i]
-      : [],
+  return g.players[g.turn].pawns.flatMap((_, i) =>
+    moveError(g, i) === null ? [i] : [],
   );
 }
+
 function log(g: Game, text: string, kind: GameLog["kind"], player = g.turn) {
   g.logs = [...g.logs.slice(-39), { id: g.revision + 1, player, text, kind }];
   g.lastAction = text;
@@ -199,8 +223,8 @@ export function rollGame(input: Game, shells: boolean[]): Game {
   return g;
 }
 export function moveGame(input: Game, pawn: number): Game {
-  if (!Number.isInteger(pawn) || !legalMoves(input).includes(pawn))
-    throw new Error("Choose a highlighted pawn.");
+  const error = moveError(input, pawn);
+  if (error) throw new Error(error);
   const g = structuredClone(input),
     p = g.players[g.turn],
     distance = g.roll!;

@@ -42,6 +42,7 @@ import {
 import { Avatar, AvatarPicker, portraitOf } from "./avatar";
 import { ThrowButton } from "./throw-button";
 import { useGameAudio } from "./use-game-audio";
+import { ExperiencePicker } from "./experience-picker";
 import { Board } from "./board";
 import { Cowries } from "./cowries";
 import { usePlayView } from "./use-play-view";
@@ -96,11 +97,12 @@ export default function GameApp() {
   );
 }
 function GameScreen() {
-  const { t, language, setLanguage, theme, setTheme } = usePreferences();
+  const { t, language, setLanguage, theme, setTheme, advanced } =
+    usePreferences();
   const [size, setSize] = useState<BoardSize>(5),
     [mode, setMode] = useState<Mode>("online"),
     [count, setCount] = useState(2),
-    [capture, setCapture] = useState(false),
+    [capture] = useState(true),
     [name, setName] = useState(""),
     [avatar, setAvatar] = useState(0),
     [game, setGame] = useState<Game | null>(null),
@@ -421,10 +423,23 @@ function GameScreen() {
   const move = useCallback(
     async (pawn: number) => {
       if (inFlight.current) return;
+      const g = gameRef.current;
+      if (!g) return;
       setShowShot(false);
-      chime("move");
-      if (sessionRef.current) await onlineAction("move", { pawn });
-      else setGame((g) => (g ? moveGame(g, pawn) : g));
+      setError("");
+      if (sessionRef.current) {
+        if (await onlineAction("move", { pawn })) chime("move");
+      } else {
+        try {
+          const next = moveGame(g, pawn);
+          setGame(next);
+          chime("move");
+        } catch (e) {
+          setError(
+            e instanceof Error ? e.message : "Choose one of your pawns.",
+          );
+        }
+      }
     },
     [onlineAction, chime],
   );
@@ -597,8 +612,7 @@ function GameScreen() {
             <span>
               {t("chowka bara")}
               <small>
-                {game.size} × {game.size} ·{" "}
-                {t(game.captureRequired ? "Capture to enter" : "Friendly race")}
+                {game.size} × {game.size} · {t("Capture to enter")}
               </small>
             </span>
           </div>
@@ -640,7 +654,7 @@ function GameScreen() {
       )}
       {focused && error && (
         <div className="play-error-banner" role="alert">
-          <WifiOff size={16} />
+          <CircleHelp size={16} />
           <span>{t(error)}</span>
           <button
             className="icon-button"
@@ -773,7 +787,7 @@ function GameScreen() {
                     ? "Pull up a chair. Invite your people. The courtyard is yours."
                     : game.phase === "finished"
                       ? "A little luck, a little strategy. Ready for another round?"
-                      : `${game.size} × ${game.size} ${game.size === 5 ? "Classic" : "Grand"} · ${game.captureRequired ? "Capture to enter" : "Friendly race"} · ${game.mode === "online" ? "Online table" : game.mode === "solo" ? "Practice with the computer" : "Pass & play"}`,
+                      : `${game.size} × ${game.size} ${game.size === 5 ? "Classic" : "Grand"} · ${"Capture to enter"} · ${game.mode === "online" ? "Online table" : game.mode === "solo" ? "Practice with the computer" : "Pass & play"}`,
               )}
             </p>
           </div>
@@ -821,21 +835,24 @@ function GameScreen() {
                     </span>
                   </button>
                 )}
-                <button
-                  className={`path-button ${showPath ? "selected" : ""}`}
-                  onClick={() => setShowPath(!showPath)}
-                  aria-pressed={showPath}
-                >
-                  <Route size={14} />
-                  <span>{t(showPath ? "Hide path" : "Show path")}</span>
-                </button>
+                <ExperiencePicker compact />
+                {!advanced && (
+                  <button
+                    className={`path-button ${showPath ? "selected" : ""}`}
+                    onClick={() => setShowPath(!showPath)}
+                    aria-pressed={showPath}
+                  >
+                    <Route size={14} />
+                    <span>{t(showPath ? "Hide path" : "Show path")}</span>
+                  </button>
+                )}
               </div>
             </div>
             <Board
               game={boardGame}
               canPlay={playable}
               preview={!game || game.phase === "lobby"}
-              showPath={showPath}
+              showPath={showPath && !advanced}
               onMove={move}
               throwOverlay={
                 game?.phase === "playing" && (rolling || showShot) ? (
@@ -1049,26 +1066,19 @@ function GameScreen() {
                     </div>
                   )}
                 </div>
-                <button
-                  className="rules-toggle"
-                  role="switch"
-                  aria-checked={capture}
-                  onClick={() => setCapture(!capture)}
-                >
-                  <div>
-                    <span>{t("Capture to enter")}</span>
-                    <small>
+                <ExperiencePicker />
+                <div className="traditional-rules">
+                  <ShieldCheck size={18} />
+                  <p>
+                    <strong>{t("Capture to enter")}</strong>
+                    <span>{t("Make a capture to enter the inner ring.")}</span>
+                    <span>
                       {t(
-                        capture
-                          ? "Make a capture to enter the inner ring."
-                          : "A relaxed race. Perfect for a first game.",
+                        "One pawn per player in each house. Start and finish can be shared.",
                       )}
-                    </small>
-                  </div>
-                  <span className={`toggle ${capture ? "on" : ""}`}>
-                    <i />
-                  </span>
-                </button>
+                    </span>
+                  </p>
+                </div>
                 {error && (
                   <p className="error-message" role="alert">
                     {t(error)}
@@ -1224,9 +1234,7 @@ function GameScreen() {
                 <p className="panel-footnote">
                   {t("2–4 players · ")}
                   {game.size} × {game.size} ·{t(" ")}
-                  {t(
-                    game.captureRequired ? "Capture to enter" : "Friendly race",
-                  )}
+                  {t("Capture to enter")}
                 </p>
                 <button
                   className="subtle-button"
@@ -1378,7 +1386,7 @@ function GameScreen() {
                           : "Their turn to throw"
                   }
                 />
-                {game.roll !== null && myTurn && (
+                {game.roll !== null && myTurn && !advanced && (
                   <div className="pawn-picker">
                     {legalMoves(game).map((p) => (
                       <button
@@ -1754,6 +1762,13 @@ function GameScreen() {
                 {t("View results")}
                 <ArrowRight size={16} />
               </button>
+            ) : myTurn && game.roll !== null && advanced ? (
+              <div className="advanced-turn">
+                <span className="roll-value" aria-label={t("Your throw")}>
+                  {game.roll}
+                </span>
+                <strong>{t("Select a pawn on the board.")}</strong>
+              </div>
             ) : myTurn && game.roll !== null ? (
               <div className="mobile-pawns">
                 {legalMoves(game).map((p) => (
@@ -1902,15 +1917,15 @@ function RulesGuide({ size }: { size: BoardSize }) {
           <strong>{t("Capture & find shelter")}</strong>
           <p>
             {t(
-              "Land exactly on a rival to send their pawns back to the start and earn a bonus throw. Crossed squares and the center are safe. Pawns may share squares; this edition has no pairing or blockade rules. ",
+              "Land exactly on a rival to send their pawn back to the start and earn a bonus throw. Crossed squares and the center are safe. One pawn per player in each house; your start and the finish can hold all four. ",
             )}
           </p>
         </li>
         <li>
-          <strong>{t("Pick your tradition")}</strong>
+          <strong>{t("Earn your way inward")}</strong>
           <p>
             {t(
-              "Friendly race allows everyone into the inner ring. Turn on “Capture to enter” to require one capture per player before any of their pawns can leave the outer ring. ",
+              "Every player must capture an opponent before entering the inner circle. Beginner mode shows available moves. Advanced mode leaves you to choose a pawn without hints. ",
             )}
           </p>
         </li>

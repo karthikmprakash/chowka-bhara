@@ -11,6 +11,8 @@ export type Theme = "light" | "dark";
 interface Preferences {
   language: Language;
   theme: Theme;
+  advanced: boolean;
+  setAdvanced: (v: boolean) => void;
   setLanguage: (v: Language) => void;
   setTheme: (v: Theme) => void;
   t: (v: string) => string;
@@ -23,12 +25,14 @@ export function PreferencesProvider({
 }) {
   const [language, setLanguage] = useState<Language>("en"),
     [theme, setTheme] = useState<Theme>("light"),
+    [advanced, setAdvanced] = useState(false),
     [ready, setReady] = useState(false);
   useEffect(() => {
     try {
       setLanguage(
         localStorage.getItem("chowka-bara:language") === "kn" ? "kn" : "en",
       );
+      setAdvanced(localStorage.getItem("chowka-bara:advanced") === "true");
       const saved = localStorage.getItem("chowka-bara:theme");
       setTheme(
         saved === "dark" ||
@@ -50,11 +54,22 @@ export function PreferencesProvider({
     try {
       localStorage.setItem("chowka-bara:language", language);
       localStorage.setItem("chowka-bara:theme", theme);
+      localStorage.setItem("chowka-bara:advanced", String(advanced));
     } catch {}
-  }, [language, theme, ready]);
+  }, [language, theme, ready, advanced]);
   const t = useCallback((v: string) => translate(v, language), [language]);
   return (
-    <Context.Provider value={{ language, setLanguage, theme, setTheme, t }}>
+    <Context.Provider
+      value={{
+        language,
+        setLanguage,
+        theme,
+        setTheme,
+        advanced,
+        setAdvanced,
+        t,
+      }}
+    >
       {children}
     </Context.Provider>
   );

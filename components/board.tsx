@@ -29,7 +29,7 @@ export const Board = memo(function Board({
   onMove,
   throwOverlay,
 }: Props) {
-  const { t } = usePreferences();
+  const { t, advanced } = usePreferences();
   const [hover, setHover] = useState<number | null>(null);
   const n = g.size,
     current = g.players[g.turn],
@@ -53,11 +53,11 @@ export const Board = memo(function Board({
     });
   });
   const destinations =
-    canPlay && g.roll !== null
+    canPlay && !advanced && g.roll !== null
       ? moves.map((i) => path[current.pawns[i] + g.roll!].join(","))
       : [];
   const target =
-    hover !== null && moves.includes(hover) && g.roll !== null
+    !advanced && hover !== null && moves.includes(hover) && g.roll !== null
       ? path[current.pawns[hover] + g.roll].join(",")
       : null;
   return (
@@ -142,19 +142,80 @@ export const Board = memo(function Board({
                     />
                   )}
                   {start !== null && <span className="start-mark" />}
-                  {showPath && !home && (
+                  {showPath && !advanced && !home && (
                     <span className="path-step">{step}</span>
                   )}
                 </div>
               );
             })}
+            {showPath && !advanced && (
+              <svg
+                className="direction-trail"
+                viewBox={`0 0 ${n * 100} ${n * 100}`}
+                aria-hidden="true"
+                key={`route-${n}-${current.color}`}
+              >
+                <defs>
+                  <marker
+                    id={`route-arrow-${current.color}`}
+                    viewBox="0 0 10 10"
+                    refX="8"
+                    refY="5"
+                    markerWidth="5"
+                    markerHeight="5"
+                    orient="auto-start-reverse"
+                  >
+                    <path
+                      d="M 1 1 L 9 5 L 1 9"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                  </marker>
+                </defs>
+                <polyline
+                  className="route-line"
+                  points={path
+                    .map(([r, c]) => `${c * 100 + 50},${r * 100 + 50}`)
+                    .join(" ")}
+                  fill="none"
+                />
+                {path.slice(1).map(([r, c], i) => {
+                  const [pr, pc] = path[i];
+                  return (
+                    <line
+                      key={i}
+                      x1={(pc * 100 + c * 100) / 2 + 50 - (c - pc) * 12}
+                      y1={(pr * 100 + r * 100) / 2 + 50 - (r - pr) * 12}
+                      x2={(pc * 100 + c * 100) / 2 + 50 + (c - pc) * 12}
+                      y2={(pr * 100 + r * 100) / 2 + 50 + (r - pr) * 12}
+                      markerEnd={`url(#route-arrow-${current.color})`}
+                    />
+                  );
+                })}
+                <circle className="route-bead" r="7">
+                  <animateMotion
+                    dur={`${path.length * 0.17}s`}
+                    repeatCount="indefinite"
+                    path={path
+                      .map(
+                        ([r, c], i) =>
+                          `${i === 0 ? "M" : "L"} ${c * 100 + 50} ${r * 100 + 50}`,
+                      )
+                      .join(" ")}
+                  />
+                </circle>
+              </svg>
+            )}
             {Array.from(stacks.entries()).flatMap(([, tokens]) =>
               tokens.map((token, stack) => {
                 const p = g.players[token.player],
                   eligible =
                     token.player === g.turn &&
                     canPlay &&
-                    moves.includes(token.pawn) &&
+                    g.roll !== null &&
+                    !token.home &&
+                    (advanced || moves.includes(token.pawn)) &&
                     !preview;
                 const cols =
                   tokens.length <= 1
@@ -173,7 +234,7 @@ export const Board = memo(function Board({
                 return (
                   <button
                     key={`${p.id}-${token.pawn}`}
-                    className={`pawn grain-${p.color} ${eligible ? "movable" : ""} ${token.home ? "arrived" : ""}`}
+                    className={`pawn grain-${p.color} ${eligible && !advanced ? "movable" : ""} ${token.home ? "arrived" : ""}`}
                     disabled={!eligible}
                     onClick={() => onMove(token.pawn)}
                     onMouseEnter={() => setHover(token.pawn)}
@@ -181,7 +242,7 @@ export const Board = memo(function Board({
                     onFocus={() => setHover(token.pawn)}
                     onBlur={() => setHover(null)}
                     aria-label={t(
-                      `${p.name}, pawn ${token.pawn + 1}${eligible ? ", move " + g.roll + " spaces" : ""}`,
+                      `${p.name}, pawn ${token.pawn + 1}${eligible && !advanced ? ", move " + g.roll + " spaces" : ""}`,
                     )}
                     style={
                       {

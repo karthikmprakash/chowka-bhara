@@ -1,5 +1,29 @@
 export type Language = "en" | "kn";
 export const kannada: Record<string, string> = {
+  "Play assistance": "ಆಟದ ಸಹಾಯ",
+  Beginner: "ಆರಂಭಿಕ",
+  Advanced: "ಅನುಭವಿ",
+  "Your judgement. No move hints.": "ನಿಮ್ಮ ಯೋಚನೆ. ನಡೆಯ ಸುಳಿವುಗಳಿಲ್ಲ.",
+  "Learn with move hints and previews.": "ನಡೆಯ ಸುಳಿವುಗಳೊಂದಿಗೆ ಕಲಿಯಿರಿ.",
+  "Same traditional rules. Your choice of guidance.":
+    "ಅದೇ ಸಾಂಪ್ರದಾಯಿಕ ನಿಯಮಗಳು. ಸಹಾಯದ ಆಯ್ಕೆ ನಿಮ್ಮದು.",
+  "Select a pawn on the board.": "ಮಣೆಯ ಮೇಲಿರುವ ನಿಮ್ಮ ಕಾಯಿ ಆರಿಸಿ.",
+  "Your throw": "ನಿಮ್ಮ ಅಂಕ",
+  "One pawn per player in each house. Start and finish can be shared.":
+    "ಪ್ರತಿ ಮನೆಯಲ್ಲಿ ಒಬ್ಬ ಆಟಗಾರನ ಒಂದು ಕಾಯಿ ಮಾತ್ರ. ಆರಂಭ ಮತ್ತು ಗುರಿಯ ಮನೆಯಲ್ಲಿ ನಾಲ್ಕೂ ಕಾಯಿಗಳು ಇರಬಹುದು.",
+  "Earn your way inward": "ಕಾಯಿ ಹೊಡೆದು ಒಳಸುತ್ತಿಗೆ ಬನ್ನಿ",
+  "Throw the cowries before choosing a pawn.": "ಕಾಯಿ ಆರಿಸುವ ಮೊದಲು ಕವಡೆ ಹಾಕಿ.",
+  "Choose one of your pawns.": "ನಿಮ್ಮ ಕಾಯಿಗಳಲ್ಲಿ ಒಂದನ್ನು ಆರಿಸಿ.",
+  "This pawn is already home.": "ಈ ಕಾಯಿ ಈಗಾಗಲೇ ಗುರಿ ತಲುಪಿದೆ.",
+  "You need an exact throw to reach home.": "ಗುರಿ ತಲುಪಲು ಸರಿಯಾದ ಅಂಕ ಬೇಕು.",
+  "Capture an opponent before entering the inner circle.":
+    "ಒಳಸುತ್ತಿಗೆ ಹೋಗುವ ಮೊದಲು ಎದುರಾಳಿಯ ಕಾಯಿ ಹೊಡೆಯಬೇಕು.",
+  "That house already holds one of your pawns.":
+    "ಆ ಮನೆಯಲ್ಲಿ ಈಗಾಗಲೇ ನಿಮ್ಮ ಒಂದು ಕಾಯಿ ಇದೆ.",
+  "Land exactly on a rival to send their pawn back to the start and earn a bonus throw. Crossed squares and the center are safe. One pawn per player in each house; your start and the finish can hold all four. ":
+    "ಎದುರಾಳಿಯ ಕಾಯಿ ಇರುವ ಮನೆಗೆ ಬಂದು ಅದನ್ನು ಆರಂಭಕ್ಕೆ ಕಳುಹಿಸಿ ಮತ್ತೊಮ್ಮೆ ಕವಡೆ ಹಾಕಿ. ಅಡ್ಡಗೆರೆ ಇರುವ ಮನೆಗಳು ಮತ್ತು ಮಧ್ಯದ ಮನೆ ಸುರಕ್ಷಿತ. ಪ್ರತಿ ಮನೆಯಲ್ಲಿ ನಿಮ್ಮ ಒಂದು ಕಾಯಿ ಮಾತ್ರ ಇರಬಹುದು; ಆರಂಭ ಮತ್ತು ಗುರಿಯ ಮನೆಯಲ್ಲಿ ನಾಲ್ಕೂ ಇರಬಹುದು. ",
+  "Every player must capture an opponent before entering the inner circle. Beginner mode shows available moves. Advanced mode leaves you to choose a pawn without hints. ":
+    "ಒಳಸುತ್ತಿಗೆ ಹೋಗುವ ಮೊದಲು ಪ್ರತಿ ಆಟಗಾರ ಎದುರಾಳಿಯ ಕಾಯಿ ಹೊಡೆಯಬೇಕು. ಆರಂಭಿಕ ವಿಧಾನದಲ್ಲಿ ಸಾಧ್ಯ ನಡೆಗಳು ಕಾಣಿಸುತ್ತವೆ. ಅನುಭವಿ ವಿಧಾನದಲ್ಲಿ ಸುಳಿವುಗಳಿಲ್ಲದೆ ಕಾಯಿ ಆರಿಸಬೇಕು. ",
   "Your face at the table": "ಆಟದ ಅಂಗಳದಲ್ಲಿ ನಿಮ್ಮ ಮುಖ",
   "Choose someone who feels like you.": "ನಿಮ್ಮಂತಿರುವ ಮುಖವನ್ನು ಆರಿಸಿ.",
   "Choose your portrait": "ನಿಮ್ಮ ಮುಖಚಿತ್ರ ಆರಿಸಿ",

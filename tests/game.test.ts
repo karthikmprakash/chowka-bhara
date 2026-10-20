@@ -49,6 +49,7 @@ for (const size of [5, 7] as const) {
   test(`${size}×${size}: exact home, bonus and victory`, () => {
     const g = newGame(size),
       end = basePath(size).length - 1;
+    g.players[0].captures = 1;
     g.players[0].pawns = [end, end, end, end - 1];
     g.roll = 2;
     assert.equal(legalMoves(g).length, 0);
@@ -209,11 +210,61 @@ test("Five-house inner diagonal squares allow capture; seven-house inner safe sq
     rival = playerPath(5, 2);
   const i = path.findIndex(([r, c]) => r === 1 && c === 1),
     j = rival.findIndex(([r, c]) => r === 1 && c === 1);
+  g.players[0].captures = 1;
   g.players[0].pawns[0] = i - 1;
   g.players[1].pawns[0] = j;
   g.roll = 1;
   const moved = moveGame(g, 0);
   assert.equal(moved.players[1].pawns[0], 0);
-  assert.equal(moved.players[0].captures, 1);
+  assert.equal(moved.players[0].captures, 2);
   assert.equal(isSafe(7, [1, 1]), true);
+});
+
+for (const size of [5, 7] as const) {
+  test(`${size}: own occupied houses reject a landing but allow passing`, () => {
+    const g = newGame(size, "local");
+    g.players[0].pawns = [1, 3, 0, 0];
+    g.roll = 2;
+    assert.ok(!legalMoves(g).includes(0));
+    assert.throws(() => moveGame(g, 0), /already holds/);
+    g.roll = 3;
+    assert.ok(legalMoves(g).includes(0));
+    assert.deepEqual(moveGame(g, 0).players[0].pawns, [4, 3, 0, 0]);
+  });
+  test(`${size}: starting and finished pawns may share their houses`, () => {
+    const g = newGame(size);
+    g.roll = 1;
+    assert.equal(legalMoves(g).length, 4);
+    const end = basePath(size).length - 1;
+    g.players[0].captures = 1;
+    g.players[0].pawns = [end, end, end, end - 1];
+    assert.equal(moveGame(g, 3).phase, "finished");
+  });
+  test(`${size}: capture gate applies to old relaxed games and remains open after capture`, () => {
+    const g = newGame(size, "local", 2, false);
+    g.captureRequired = false;
+    const boundary = 4 * (size - 1);
+    g.players[0].pawns = [boundary - 2, 0, 0, 0];
+    g.roll = 2;
+    assert.ok(!legalMoves(g).includes(0));
+    assert.throws(() => moveGame(g, 0), /Capture an opponent/);
+    g.players[0].captures = 1;
+    const moved = moveGame(g, 0);
+    assert.equal(moved.players[0].pawns[0], boundary);
+  });
+}
+test("Seven-house revisit cannot land on own pawn at the same physical cell", () => {
+  const g = newGame(7);
+  g.players[0].captures = 1;
+  const route = basePath(7);
+  const repeated = route.findIndex(
+    (p, i) => route.findIndex((q) => q[0] === p[0] && q[1] === p[1]) < i,
+  );
+  const first = route.findIndex(
+    (q) => q[0] === route[repeated][0] && q[1] === route[repeated][1],
+  );
+  g.players[0].pawns = [repeated - 1, first, 0, 0];
+  g.roll = 1;
+  assert.ok(!legalMoves(g).includes(0));
+  assert.throws(() => moveGame(g, 0), /already holds/);
 });

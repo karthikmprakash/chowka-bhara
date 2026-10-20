@@ -79,7 +79,7 @@ async function readRoom(code: string) {
 function view(room: Room, playerId: string) {
   return {
     code: room.code,
-    game: JSON.parse(room.state),
+    game: { ...JSON.parse(room.state), captureRequired: true },
     playerId,
     expiresAt: room.expires_at,
   };
@@ -156,6 +156,7 @@ export async function actRoom(req: Request, code: string) {
       r = await readRoom(code);
     if (!r) return json({ error: "Room not found or expired." }, 404);
     let g = JSON.parse(r.state) as Game;
+    g.captureRequired = true;
     const members = JSON.parse(r.members) as Members;
     const auth =
       req.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";

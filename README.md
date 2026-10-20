@@ -40,7 +40,7 @@ The 5×5 board uses four shells, scoring 1, 2, 3, 4, or 8. The 7×7 board uses s
 
 A capture resets every rival pawn at the destination to its home square and earns another throw. The 5×5 board has four safe houses at the outer midpoints; its four inner diagonal squares allow captures. The 7×7 board has eight safe houses. The center is the protected finish on both boards. Landing home requires an exact throw and earns a bonus. With no legal move, the throw is skipped; a bonus is retained. First to bring all four pawns home wins.
 
-The optional **Capture to enter** rule requires one capture per player before entering the inner ring. This is a deliberately documented house ruleset: throws resolve individually; pawn pairing, blockades, and three-bonus penalties are excluded. The in-app guide explains every rule. Regional reference: https://rollthedice.in/pages/how-to-play-chowka-bara-7-house.
+**Capture to enter** is mandatory: each player must capture an opponent before entering the inner ring. One pawn per player may occupy a house, with shared starts and the central finish. Occupancy uses physical coordinates, including the repeated seven-house entry. This is a deliberately documented house ruleset: throws resolve individually; pawn pairing, blockades, and three-bonus penalties are excluded. The in-app guide explains every rule. Regional reference: https://rollthedice.in/pages/how-to-play-chowka-bara-7-house.
 
 ## Architecture
 
@@ -75,3 +75,9 @@ The pieces use procedural grain artwork: kidney beans, green gram, chickpeas, an
 Eight hand-painted Indian household portraits are generated with the built-in image tool; the exact prompt is in `public/images/PROMPT.md`. The shared WebP sprite is about 200 KB, cached with static assets. Pick a portrait before hosting/joining, or use the portrait button during a game. Online changes authenticate the seat and participate in revision checks; older saved games receive a deterministic fallback.
 
 Throw audio is an excerpt of bassronin's CC0 **Shell Drop**, an actual seashell recording. Source and processing are documented in `public/audio/LICENSE.txt`. One reusable Web Audio context loads the 11 KB local sample after sound is enabled; audio remains optional. Full-screen two-player play reduces side insets and raises the board cap from 540 to 820 pixels, with a height limit for short screens.
+
+### Beginner and Advanced assistance
+
+The assistance preference is personal and saved locally, so online players can choose independently. Beginner shows legal pawn highlights, landing previews, a move picker, and an explicitly enabled animated direction trail. Advanced hides these hints; all unfinished pawns of the current player remain selectable. Invalid selections explain the rule without consuming the throw or changing the turn. Both modes enforce identical rules on the server and locally; legacy relaxed games also follow the mandatory capture gate.
+
+Focused board sizing uses its actual available stage height and width via container units, reserving space for complete top and bottom player profiles. Throw button labels and secondary text use explicit high-contrast colors in both themes.

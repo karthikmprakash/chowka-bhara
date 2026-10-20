@@ -19,6 +19,7 @@ test("Room lifecycle: seats, authorization, concurrent actions, play, resign and
     captureRequired: false,
   });
   assert.equal(host.status, 201);
+  assert.equal(host.game.captureRequired, true);
   assert.match(host.code, /^[A-Z2-9]{6}$/);
   assert.ok(host.token);
   const path = "/api/rooms/" + host.code;

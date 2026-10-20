@@ -6,6 +6,11 @@ test("English remains unchanged; Kannada translates setup, game controls, rules 
     "Create a room",
     "Throw the cowries",
     "Show path",
+    "Beginner",
+    "Advanced",
+    "Play assistance",
+    "That house already holds one of your pawns.",
+    "Capture an opponent before entering the inner circle.",
     "The 5-house board has four safe houses at the outer midpoints. The center is the finish. Inner squares allow captures.",
     "Room not found or expired.",
   ]) {
