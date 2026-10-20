@@ -22,6 +22,12 @@ type CapPlugin = {
   setKeepAwake?: (options: { enabled: boolean }) => Promise<void>;
   setImmersive?: (options: { enabled: boolean }) => Promise<void>;
   getInsets?: () => Promise<SystemInsets>;
+  share?: (options: {
+    title?: string;
+    text?: string;
+    url?: string;
+    dialogTitle?: string;
+  }) => Promise<void>;
   exitApp?: () => Promise<void>;
 };
 
@@ -89,6 +95,13 @@ export function hapticThrow(): void {
   if (!isNativeApp()) return;
   const haptics = plugin("Haptics");
   void haptics?.impact?.({ style: "LIGHT" }).catch(() => {});
+}
+
+/** A firmer tap as a pawn lands on its square. */
+export function hapticLanding(): void {
+  if (!isNativeApp()) return;
+  const haptics = plugin("Haptics");
+  void haptics?.impact?.({ style: "MEDIUM" }).catch(() => {});
 }
 
 /** Hold the screen awake while a game is in progress. */
@@ -188,6 +201,27 @@ export function syncStatusBarTheme(): () => void {
     attributeFilter: ["data-theme"],
   });
   return () => observer.disconnect();
+}
+
+/**
+ * Share an invite with the device's own share sheet, the way a phone app
+ * should. Returns false when the shell cannot share, so the page can fall
+ * back to the clipboard.
+ */
+export async function shareInvite(
+  title: string,
+  text: string,
+  url: string,
+): Promise<boolean> {
+  if (!isNativeApp()) return false;
+  const share = plugin("Share");
+  if (!share?.share) return false;
+  try {
+    await share.share({ title, text, url, dialogTitle: title });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

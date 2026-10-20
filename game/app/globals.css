@@ -4997,3 +4997,102 @@ html[data-theme="dark"] .throw-button.primary-button {
     font-size: 16px;
   }
 }
+
+/* The game on a phone.
+   The board already fills the width, so the gains here are clarity and room:
+   the turn is said once instead of twice, the bar above the board is short,
+   and the players around the board are big enough to read. */
+@media (max-width: 700px) {
+  /* The turn bar already says whose turn it is. */
+  .is-focused .board-turn-caption {
+    display: none;
+  }
+  .is-focused .focus-topbar {
+    padding: 7px max(16px, var(--inset-right)) 7px max(16px, var(--inset-left));
+    padding-top: max(7px, var(--inset-top));
+    gap: 10px;
+  }
+  .is-focused .focus-topbar:has(.immersive-button) .icon-button {
+    width: 40px;
+    height: 40px;
+  }
+  .is-focused .game-layout {
+    margin: 4px 8px 0;
+  }
+  .is-focused .board-stage {
+    padding: 0;
+  }
+  .is-focused .board-surround {
+    --play-board-size: min(calc(100vw - 120px), calc(100dvh - 300px), 540px);
+    width: calc(var(--play-board-size) + 120px);
+    max-width: 100%;
+    padding: 58px 60px 52px;
+  }
+  /* Two players need no side seats, so the board can take the full width. */
+  .is-focused .board-surround.two-seats {
+    --play-board-size: min(calc(100vw - 16px), calc(100dvh - 300px), 820px);
+    width: calc(var(--play-board-size) + 12px);
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .is-focused .seat-1 {
+    left: 8px;
+    right: auto;
+  }
+  .is-focused .seat-3 {
+    right: 8px;
+    left: auto;
+  }
+  .is-focused .seat-1,
+  .is-focused .seat-3 {
+    max-width: 46px;
+    white-space: normal;
+  }
+  .is-focused .seat-1 strong,
+  .is-focused .seat-3 strong {
+    max-width: 46px;
+    font-size: 10px;
+    line-height: 1.25;
+  }
+  .is-focused .seat-1 .seat-avatar,
+  .is-focused .seat-3 .seat-avatar {
+    width: 26px;
+    height: 26px;
+  }
+  .is-focused .table-toolbar {
+    height: 34px;
+    min-height: 34px;
+  }
+  .is-focused .seat-avatar {
+    width: 34px;
+    height: 34px;
+  }
+  .is-focused .seat strong {
+    font-size: 13px;
+  }
+  .is-focused .seat > div > span {
+    font-size: 11px;
+  }
+  .is-focused .seat-1 .seat-avatar,
+  .is-focused .seat-3 .seat-avatar {
+    width: 28px;
+    height: 28px;
+  }
+  .is-focused .seat-1 strong,
+  .is-focused .seat-3 strong {
+    font-size: 10px;
+  }
+  .is-focused .seat-1 > div > span,
+  .is-focused .seat-3 > div > span {
+    font-size: 9px;
+  }
+  .is-focused .mobile-turn-bar {
+    min-height: 76px;
+    padding: 10px max(16px, var(--inset-right))
+      max(10px, var(--inset-bottom)) max(16px, var(--inset-left));
+    gap: 12px;
+  }
+  .is-focused .mobile-turn-bar > div:first-child {
+    min-width: 0;
+  }
+}

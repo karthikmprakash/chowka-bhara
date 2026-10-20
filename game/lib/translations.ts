@@ -321,7 +321,7 @@ export function translate(text: string, language: Language): string {
   if (source === "COUNTLESS POSSIBILITIES") return "ಅನೇಕ ಸಾಧ್ಯತೆಗಳು";
   if ((m = source.match(/^You \+ (\d+) computer opponents?$/)))
     return `ನೀವು + ${m[1]} ಕಂಪ್ಯೂಟರ್ ಆಟಗಾರರು`;
-  if ((m = source.match(/^Move (\d+) spaces$/)))
+  if ((m = source.match(/^Move (\d+) spaces?$/)))
     return `${m[1]} ಮನೆ ಮುಂದೆ ಹೋಗಿ`;
   if ((m = source.match(/^Move pawn (\d+)$/))) return `${m[1]}ನೇ ಕಾಯಿ ನಡೆಸಿ`;
   if ((m = source.match(/^(\d+) players$/))) return `${m[1]} ಆಟಗಾರರು`;

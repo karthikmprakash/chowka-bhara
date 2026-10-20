@@ -50,7 +50,7 @@ import { Cowries } from "./cowries";
 import { usePlayView } from "./use-play-view";
 import { useIsCompact } from "@/hooks/use-mobile";
 import { latestThrow, type ThrowSnapshot } from "@/lib/presentation";
-import { setKeepAwake } from "@/lib/native";
+import { isNativeApp, setKeepAwake, shareInvite } from "@/lib/native";
 import { PreferencesProvider, usePreferences } from "./preferences";
 import {
   COLORS,
@@ -593,10 +593,13 @@ function GameScreen() {
   }
   async function copyInvite() {
     if (!session) return;
+    const link = `${location.origin}${location.pathname}?room=${session.code}`;
+    // On a phone the device's own share sheet is the natural way to invite.
+    if (await shareInvite(t("Your table is open"), t("Join my Chowka Bara table with this code: ") + session.code, link)) {
+      return;
+    }
     try {
-      await navigator.clipboard.writeText(
-        `${location.origin}${location.pathname}?room=${session.code}`,
-      );
+      await navigator.clipboard.writeText(link);
       setCopied(true);
       say("Invite link copied. Send it to your friends.");
       setTimeout(() => setCopied(false), 2200);
@@ -618,6 +621,8 @@ function GameScreen() {
         ),
       );
   }
+  const moveLabel = (n: number) =>
+    t(`Move ${n} ${n === 1 ? "space" : "spaces"}`);
   const title = !game
     ? "Some games never grow old."
     : game.phase === "lobby"
@@ -1193,7 +1198,7 @@ function GameScreen() {
                       : rolling
                         ? "Tossing…"
                         : game.roll !== null
-                          ? `Move ${game.roll} spaces`
+                          ? moveLabel(game.roll)
                           : game.bonus
                             ? "A bonus throw. Make it count."
                             : myTurn
@@ -1297,7 +1302,13 @@ function GameScreen() {
                   <button onClick={copyInvite}>
                     {copied ? <Check size={16} /> : <Copy size={16} />}
                     {t(" ")}
-                    {t(copied ? "Copied" : "Copy invite link")}
+                    {t(
+                      copied
+                        ? "Copied"
+                        : isNativeApp()
+                          ? "Share invite"
+                          : "Copy invite link",
+                    )}
                   </button>
                 </div>
                 <div className="setting-heading">
@@ -1877,17 +1888,19 @@ function GameScreen() {
                       : `${game.players[game.turn].name}’s turn`,
                 )}
               </strong>
-              <small>
-                {t(
-                  pawnMoving
-                    ? "Moving pawn…"
-                    : rolling
-                      ? "Tossing…"
-                      : game.roll !== null
-                        ? `Move ${game.roll} spaces`
-                        : "Throw the cowries",
-                )}
-              </small>
+              {(pawnMoving || rolling || (myTurn && game.roll !== null)) && (
+                <small>
+                  {t(
+                    pawnMoving
+                      ? "Moving pawn…"
+                      : rolling
+                        ? "Tossing…"
+                        : game.roll !== null
+                          ? moveLabel(game.roll)
+                          : "",
+                  )}
+                </small>
+              )}
             </div>
             {game.phase === "finished" ? (
               <button

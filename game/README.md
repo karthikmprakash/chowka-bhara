@@ -64,6 +64,16 @@ own scale, owned by the phone design system block at the end of
 
 Nothing above 700px changes: the wide layout keeps its original sizes.
 
+## The table on a phone
+
+The board already fills the width, so the gains are clarity and room:
+
+- The turn is said once. The board no longer repeats the turn bar, and the
+  bar itself only speaks when it has something new to say.
+- The players around the board are large enough to read, and a four player
+  game leaves room for the players at the sides instead of clipping them.
+- Two players get the full width; four give up a little for the side seats.
+
 ## Rules in this edition
 
 The 5×5 board uses four shells, scoring 1, 2, 3, 4, or 8. The 7×7 board uses six, scoring 1–6 or 12. All open or all closed grants a bonus. Pawns begin on the colored home square. Move around the outer perimeter, then follow the alternating inward spiral. The seven-house route revisits its final inner-ring entry before reaching the center, keeping every step orthogonally connected.

@@ -2,6 +2,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { Game } from "@/lib/game";
 import { pawnTravel, travelFrame, type PawnTravel } from "@/lib/presentation";
+import { hapticLanding } from "@/lib/native";
 export function usePawnTravel(game: Game | null) {
   const [visual, setVisual] = useState<Game | null>(game),
     [travel, setTravel] = useState<PawnTravel | null>(null);
@@ -25,6 +26,8 @@ export function usePawnTravel(game: Game | null) {
     const frame = (index: number) => {
       if (cancelled) return;
       if (index === plan.steps.length) {
+        // The pawn has landed, so the hand feels it.
+        hapticLanding();
         sync();
         return;
       }

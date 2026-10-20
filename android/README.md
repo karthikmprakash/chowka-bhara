@@ -82,7 +82,9 @@ unchanged for the web build.
 - **Status bar.** The icons follow the in-app light and dark theme.
 - **Immersive play.** "Hide browser controls" hides the system bars, the same
   way the browser's fullscreen hides the browser chrome.
-- **Haptics.** A throw taps the vibrator.
+- **Haptics.** A throw taps the vibrator, and a pawn landing taps it again.
+- **Sharing.** The invite opens the device's own share sheet, with the room
+  code and the link.
 - **Screen wake-lock.** The display stays on while a game is in progress.
 - **Back button.** It closes an open dialog, then leaves the focused board,
   and only then closes the app.
