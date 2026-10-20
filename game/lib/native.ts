@@ -192,7 +192,8 @@ export function syncStatusBarTheme(): () => void {
 
 /**
  * Hardware back button: close an open dialog first, then leave the focused
- * play view, and only close the app when there is nowhere else to go.
+ * play view, then step back through the app's screens, and only close the
+ * app when there is nowhere else to go.
  */
 export function bindBackButton(): () => void {
   if (!isNativeApp()) return () => {};
@@ -209,6 +210,13 @@ export function bindBackButton(): () => void {
       }
       if (document.documentElement.classList.contains("playing-focused")) {
         document.dispatchEvent(new CustomEvent("chowka:exit-focus"));
+        return;
+      }
+      const screen = document
+        .querySelector(".app-shell")
+        ?.getAttribute("data-screen");
+      if (screen && screen !== "home") {
+        document.dispatchEvent(new CustomEvent("chowka:back"));
         return;
       }
       void app.exitApp?.().catch(() => {});

@@ -48,6 +48,7 @@ import { ExperiencePicker } from "./experience-picker";
 import { Board } from "./board";
 import { Cowries } from "./cowries";
 import { usePlayView } from "./use-play-view";
+import { useIsCompact } from "@/hooks/use-mobile";
 import { latestThrow, type ThrowSnapshot } from "@/lib/presentation";
 import { setKeepAwake } from "@/lib/native";
 import { PreferencesProvider, usePreferences } from "./preferences";
@@ -125,6 +126,24 @@ function GameScreen() {
     [copied, setCopied] = useState(false),
     [resume, setResume] = useState<Game | null>(null),
     [hydrated, setHydrated] = useState(false);
+  // On a phone the app is a series of single screens: welcome, set the
+  // table, take your seat, the table, and the game. The wide layout keeps
+  // its one long page.
+  const compact = useIsCompact();
+  const [screen, setScreen] = useState<"home" | "setup" | "seat">("home");
+  useEffect(() => {
+    // The native shell asks for the previous screen when the hardware back
+    // button is pressed.
+    const back = () => {
+      if (game) {
+        setModal("leave");
+        return;
+      }
+      setScreen((current) => (current === "seat" ? "setup" : "home"));
+    };
+    document.addEventListener("chowka:back", back);
+    return () => document.removeEventListener("chowka:back", back);
+  }, [game]);
   const {
     rootRef,
     focused,
@@ -559,6 +578,7 @@ function GameScreen() {
     localStorage.removeItem(ROOM_KEY);
     localStorage.removeItem(LOCAL_KEY);
     setResume(null);
+    setScreen("home");
     history.replaceState(null, "", location.pathname);
   }
   async function leave() {
@@ -605,10 +625,204 @@ function GameScreen() {
       : game.phase === "finished"
         ? "A game well played."
         : "Every move tells a story.";
+  // The set up panel is split into parts so a phone can show them a screen at
+  // a time, while the wide layout keeps them together in one panel.
+  const modeBlock = (
+    <>
+      <div className="mode-tabs" role="tablist" aria-label={t("Game mode")}>
+        {(
+          [
+            { key: "online", label: "Online", icon: Users },
+            { key: "local", label: "Together", icon: Monitor },
+            { key: "solo", label: "Practice", icon: Bot },
+          ] as const
+        ).map((m) => (
+          <button
+            role="tab"
+            aria-selected={mode === m.key}
+            key={m.key}
+            onClick={() => {
+              setMode(m.key);
+              setError("");
+            }}
+            className={mode === m.key ? "active" : ""}
+          >
+            <m.icon size={17} />
+            {t(m.label)}
+          </button>
+        ))}
+      </div>
+      <p className="mode-description">
+        {t(
+          mode === "online"
+            ? "Different places. The same table."
+            : mode === "local"
+              ? "One screen. Everyone around the table."
+              : "Find your rhythm against the computer.",
+        )}
+      </p>
+    </>
+  );
+  const boardBlock = (
+    <>
+      <div className="setting-heading">
+        <label>{t("Choose your board")}</label>
+        <span>01</span>
+      </div>
+      <div className="board-options">
+        {([5, 7] as const).map((n) => (
+          <button
+            key={n}
+            className={`board-option ${size === n ? "active" : ""}`}
+            onClick={() => setSize(n)}
+            aria-pressed={size === n}
+          >
+            <GridGlyph size={n} />
+            <span>
+              <strong>
+                {n} × {n}
+              </strong>
+              <small>{t(n === 5 ? "The classic" : "The grand")}</small>
+            </span>
+            <span className="radio-dot" />
+          </button>
+        ))}
+      </div>
+    </>
+  );
+  const playersBlock = (
+    <div className="players-picker">
+      <label>{t("Players")}</label>
+      <div>
+        {[2, 3, 4].map((v) => (
+          <button
+            key={v}
+            className={count === v ? "active" : ""}
+            onClick={() => setCount(v)}
+            aria-label={t(`${v} players`)}
+            aria-pressed={count === v}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+  const nameBlock = (
+    <div className="name-field">
+      <label htmlFor="player-name">
+        {t(mode === "local" ? "First player’s name" : "Your name")}
+      </label>
+      <input
+        id="player-name"
+        autoComplete="nickname"
+        maxLength={20}
+        placeholder={t(mode === "online" ? "What should we call you?" : "You")}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+    </div>
+  );
+  const rulesBlock = (
+    <div className="traditional-rules">
+      <ShieldCheck size={18} />
+      <p>
+        <strong>{t("Capture to enter")}</strong>
+        <span>{t("Make a capture to enter the inner ring.")}</span>
+        <span>
+          {t("One pawn per player in each house. Start and finish can be shared.")}
+        </span>
+      </p>
+    </div>
+  );
+  const actionBlock = (
+    <>
+      <button
+        className="primary-button"
+        disabled={busy || !hydrated}
+        onClick={start}
+      >
+        {busy ? (
+          <Loader2 className="spinner" size={18} />
+        ) : mode === "online" ? (
+          <Users size={18} />
+        ) : (
+          <ArrowRight size={18} />
+        )}
+        <span>
+          {t(
+            busy
+              ? "Opening your table…"
+              : mode === "online"
+                ? "Create a room"
+                : mode === "local"
+                  ? "Gather & play"
+                  : "Let’s play",
+          )}
+        </span>
+        {!busy && <ArrowUpRight size={18} />}
+      </button>
+      {mode === "online" ? (
+        <button
+          className="join-link"
+          onClick={() => {
+            setModal("join");
+            setError("");
+          }}
+        >
+          {t("Have a room code?")}
+          {t(" ")}
+          <strong>
+            {t("Join a table ")}
+            <ArrowRight size={13} />
+          </strong>
+        </button>
+      ) : (
+        <p className="panel-footnote">
+          {t(
+            mode === "solo"
+              ? "You + " +
+                  (count - 1) +
+                  " computer opponent" +
+                  (count > 2 ? "s" : "") +
+                  " · No account needed"
+              : "2–4 players · Pass the device each turn",
+          )}
+        </p>
+      )}
+    </>
+  );
+  const resumeBlock = resume ? (
+    <button
+      className="resume-button"
+      onClick={() => {
+        setGame(resume);
+        setResume(null);
+      }}
+    >
+      <RotateCcw size={14} /> {t("Continue your last game")}
+      {t(" ")}
+      <ChevronRight size={14} />
+    </button>
+  ) : null;
+  const errorBlock = error ? (
+    <p className="error-message" role="alert">
+      {t(error)}
+    </p>
+  ) : null;
   return (
     <div
       ref={rootRef}
       className={`app-shell ${focused ? "is-focused" : ""} ${game?.phase === "playing" ? "is-playing" : ""} ${stillThrow ? "still-throw" : ""}`}
+      data-screen={
+        compact && !focused
+          ? game
+            ? game.phase === "finished"
+              ? "result"
+              : "lobby"
+            : screen
+          : undefined
+      }
     >
       {focused && game && (
         <div className="focus-topbar">
@@ -678,12 +892,26 @@ function GameScreen() {
         </div>
       )}
       <header className="site-header">
+        {compact && screen !== "home" && !game && (
+          <button
+            className="icon-button screen-back"
+            onClick={() =>
+              setScreen(screen === "seat" ? "setup" : "home")
+            }
+            aria-label={t("Back")}
+            title={t("Back")}
+          >
+            <ChevronLeft size={18} />
+          </button>
+        )}
         <a
           href="/"
           className="brand"
           onClick={(e) => {
             e.preventDefault();
             if (game) setModal("leave");
+            else if (compact && screen !== "home")
+              setScreen(screen === "seat" ? "setup" : "home");
             else clearTable();
           }}
           aria-label={t("Chowka Bara home")}
@@ -802,6 +1030,25 @@ function GameScreen() {
                       : `${game.size} × ${game.size} ${game.size === 5 ? "Classic" : "Grand"} · ${"Capture to enter"} · ${game.mode === "online" ? "Online table" : game.mode === "solo" ? "Practice with the computer" : "Pass & play"}`,
               )}
             </p>
+            {compact && screen === "home" && !game && (
+              <div className="home-actions">
+                <button
+                  className="primary-button home-cta"
+                  onClick={() => setScreen("setup")}
+                >
+                  <span>{t("Play")}</span>
+                  <ArrowRight size={17} />
+                </button>
+                <button
+                  className="subtle-button home-rules"
+                  onClick={() => setModal("rules")}
+                >
+                  <CircleHelp size={15} />
+                  {t("How to play")}
+                </button>
+                {resumeBlock}
+              </div>
+            )}
           </div>
           <div className="heritage-stamp">
             <Flower size={24} strokeWidth={1} />
@@ -976,196 +1223,67 @@ function GameScreen() {
           </section>
           <aside className="game-panel">
             {!game ? (
-              <>
-                <div className="panel-title">
-                  <span className="overline">{t("A SEAT FOR EVERYONE")}</span>
-                  <h2>{t("Play your way.")}</h2>
-                  <p>{t("Your people, your board, your next game.")}</p>
-                </div>
-                <div
-                  className="mode-tabs"
-                  role="tablist"
-                  aria-label={t("Game mode")}
-                >
-                  {(
-                    [
-                      { key: "online", label: "Online", icon: Users },
-                      { key: "local", label: "Together", icon: Monitor },
-                      { key: "solo", label: "Practice", icon: Bot },
-                    ] as const
-                  ).map((m) => (
-                    <button
-                      role="tab"
-                      aria-selected={mode === m.key}
-                      key={m.key}
-                      onClick={() => {
-                        setMode(m.key);
-                        setError("");
-                      }}
-                      className={mode === m.key ? "active" : ""}
-                    >
-                      <m.icon size={17} />
-                      {t(m.label)}
-                    </button>
-                  ))}
-                </div>
-                <p className="mode-description">
-                  {t(
-                    mode === "online"
-                      ? "Different places. The same table."
-                      : mode === "local"
-                        ? "One screen. Everyone around the table."
-                        : "Find your rhythm against the computer.",
-                  )}
-                </p>
-                <div className="setting-heading">
-                  <label>{t("Choose your board")}</label>
-                  <span>01</span>
-                </div>
-                <div className="board-options">
-                  {([5, 7] as const).map((n) => (
-                    <button
-                      key={n}
-                      className={`board-option ${size === n ? "active" : ""}`}
-                      onClick={() => setSize(n)}
-                      aria-pressed={size === n}
-                    >
-                      <GridGlyph size={n} />
-                      <span>
-                        <strong>
-                          {n} × {n}
-                        </strong>
-                        <small>
-                          {t(n === 5 ? "The classic" : "The grand")}
-                        </small>
-                      </span>
-                      <span className="radio-dot" />
-                    </button>
-                  ))}
-                </div>
-                <AvatarPicker value={avatar} onChange={chooseAvatar} />
-                <div className="settings-row">
-                  <div>
-                    <label htmlFor="player-name">
-                      {t(
-                        mode === "local" ? "First player’s name" : "Your name",
-                      )}
-                    </label>
-                    <input
-                      id="player-name"
-                      autoComplete="nickname"
-                      maxLength={20}
-                      placeholder={t(
-                        mode === "online" ? "What should we call you?" : "You",
-                      )}
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                    />
-                  </div>
-                  {mode !== "online" && (
-                    <div className="players-picker">
-                      <label>{t("Players")}</label>
-                      <div>
-                        {[2, 3, 4].map((v) => (
-                          <button
-                            key={v}
-                            className={count === v ? "active" : ""}
-                            onClick={() => setCount(v)}
-                            aria-label={t(`${v} players`)}
-                            aria-pressed={count === v}
-                          >
-                            {v}
-                          </button>
-                        ))}
-                      </div>
+              compact ? (
+                screen === "setup" ? (
+                  <>
+                    <div className="panel-title">
+                      <span className="overline">{t("THE TABLE")}</span>
+                      <h2>{t("Set the table.")}</h2>
+                      <p>
+                        {t(
+                          "Choose your game, your board, and the house rules.",
+                        )}
+                      </p>
                     </div>
-                  )}
-                </div>
-                <ExperiencePicker />
-                <div className="traditional-rules">
-                  <ShieldCheck size={18} />
-                  <p>
-                    <strong>{t("Capture to enter")}</strong>
-                    <span>{t("Make a capture to enter the inner ring.")}</span>
-                    <span>
-                      {t(
-                        "One pawn per player in each house. Start and finish can be shared.",
-                      )}
-                    </span>
-                  </p>
-                </div>
-                {error && (
-                  <p className="error-message" role="alert">
-                    {t(error)}
-                  </p>
-                )}
-                <button
-                  className="primary-button"
-                  disabled={busy || !hydrated}
-                  onClick={start}
-                >
-                  {busy ? (
-                    <Loader2 className="spinner" size={18} />
-                  ) : mode === "online" ? (
-                    <Users size={18} />
-                  ) : (
-                    <ArrowRight size={18} />
-                  )}
-                  <span>
-                    {t(
-                      busy
-                        ? "Opening your table…"
-                        : mode === "online"
-                          ? "Create a room"
-                          : mode === "local"
-                            ? "Gather & play"
-                            : "Let’s play",
-                    )}
-                  </span>
-                  {!busy && <ArrowUpRight size={18} />}
-                </button>
-                {mode === "online" ? (
-                  <button
-                    className="join-link"
-                    onClick={() => {
-                      setModal("join");
-                      setError("");
-                    }}
-                  >
-                    {t("Have a room code?")}
-                    {t(" ")}
-                    <strong>
-                      {t("Join a table ")}
-                      <ArrowRight size={13} />
-                    </strong>
-                  </button>
+                    {modeBlock}
+                    {boardBlock}
+                    {mode !== "online" && playersBlock}
+                    {rulesBlock}
+                    <button
+                      className="primary-button"
+                      onClick={() => setScreen("seat")}
+                    >
+                      <span>{t("Next")}</span>
+                      <ArrowRight size={18} />
+                    </button>
+                  </>
                 ) : (
-                  <p className="panel-footnote">
-                    {t(
-                      mode === "solo"
-                        ? "You + " +
-                            (count - 1) +
-                            " computer opponent" +
-                            (count > 2 ? "s" : "") +
-                            " · No account needed"
-                        : "2–4 players · Pass the device each turn",
-                    )}
-                  </p>
-                )}
-                {resume && (
-                  <button
-                    className="resume-button"
-                    onClick={() => {
-                      setGame(resume);
-                      setResume(null);
-                    }}
-                  >
-                    <RotateCcw size={14} /> {t("Continue your last game")}
-                    {t(" ")}
-                    <ChevronRight size={14} />
-                  </button>
-                )}
-              </>
+                  <>
+                    <div className="panel-title">
+                      <span className="overline">{t("YOUR SEAT")}</span>
+                      <h2>{t("Take your seat.")}</h2>
+                      <p>
+                        {t("Pick a face, a name, and how much help you want.")}
+                      </p>
+                    </div>
+                    <AvatarPicker value={avatar} onChange={chooseAvatar} />
+                    {nameBlock}
+                    <ExperiencePicker />
+                    {errorBlock}
+                    {actionBlock}
+                  </>
+                )
+              ) : (
+                <>
+                  <div className="panel-title">
+                    <span className="overline">{t("A SEAT FOR EVERYONE")}</span>
+                    <h2>{t("Play your way.")}</h2>
+                    <p>{t("Your people, your board, your next game.")}</p>
+                  </div>
+                  {modeBlock}
+                  {boardBlock}
+                  <AvatarPicker value={avatar} onChange={chooseAvatar} />
+                  <div className="settings-row">
+                    {nameBlock}
+                    {mode !== "online" && playersBlock}
+                  </div>
+                  <ExperiencePicker />
+                  {rulesBlock}
+                  {errorBlock}
+                  {actionBlock}
+                  {resumeBlock}
+                </>
+              )
             ) : game.phase === "lobby" ? (
               <>
                 <div className="panel-title">

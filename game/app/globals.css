@@ -4513,3 +4513,112 @@ html[data-theme="dark"] .throw-button.primary-button {
     transition: none !important;
   }
 }
+
+/* Phone screens.
+   On a narrow screen the app is a series of single screens - welcome, set
+   up, the table, the game - instead of one long page that scrolls. Each
+   screen fills the display and never scrolls as a whole. */
+@media (max-width: 700px) {
+  .app-shell[data-screen] {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    padding: 0 18px;
+    background: var(--paper);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  .app-shell[data-screen] > main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .app-shell[data-screen] > footer {
+    flex-shrink: 0;
+    padding-bottom: max(27px, var(--inset-bottom));
+  }
+  .app-shell[data-screen="home"] .game-layout {
+    display: none;
+  }
+  .app-shell[data-screen="home"] .page-heading {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 0 18px;
+  }
+  .app-shell[data-screen="home"] .page-heading h1 {
+    font-size: 38px;
+    max-width: 340px;
+  }
+  .app-shell[data-screen="home"] .how-strip {
+    margin-top: auto;
+  }
+  .app-shell[data-screen="setup"] .page-heading,
+  .app-shell[data-screen="setup"] .table-section,
+  .app-shell[data-screen="setup"] .how-strip,
+  .app-shell[data-screen="seat"] .page-heading,
+  .app-shell[data-screen="seat"] .table-section,
+  .app-shell[data-screen="seat"] .how-strip,
+  .app-shell[data-screen="lobby"] .page-heading,
+  .app-shell[data-screen="lobby"] .how-strip,
+  .app-shell[data-screen="lobby"] .table-section {
+    display: none;
+  }
+  .app-shell[data-screen="result"] .page-heading,
+  .app-shell[data-screen="result"] .how-strip {
+    display: none;
+  }
+  .app-shell[data-screen="setup"] .game-layout,
+  .app-shell[data-screen="seat"] .game-layout,
+  .app-shell[data-screen="lobby"] .game-layout,
+  .app-shell[data-screen="result"] .game-layout {
+    flex: 1;
+    min-height: 0;
+  }
+  .app-shell[data-screen="setup"] .game-panel,
+  .app-shell[data-screen="seat"] .game-panel,
+  .app-shell[data-screen="lobby"] .game-panel,
+  .app-shell[data-screen="result"] .game-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .app-shell[data-screen="setup"] .game-panel,
+  .app-shell[data-screen="seat"] .game-panel {
+    flex: 0 1 auto;
+    max-height: 100%;
+  }
+  .app-shell[data-screen="setup"] .site-header nav,
+  .app-shell[data-screen="seat"] .site-header nav {
+    display: none;
+  }
+  .app-shell[data-screen="setup"] .header-actions,
+  .app-shell[data-screen="seat"] .header-actions {
+    margin-left: auto;
+  }
+  .screen-back {
+    flex-shrink: 0;
+  }
+  .home-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-top: 22px;
+  }
+  .home-cta {
+    width: 100%;
+    min-height: 52px;
+    font-size: 15px;
+    justify-content: space-between;
+  }
+  .home-rules {
+    justify-content: center;
+  }
+}
