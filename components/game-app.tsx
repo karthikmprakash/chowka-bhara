@@ -36,8 +36,13 @@ import {
   Moon,
   Sun,
   Languages,
+  Maximize,
+  Minimize,
 } from "lucide-react";
 import { Board } from "./board";
+import { Cowries } from "./cowries";
+import { usePlayView } from "./use-play-view";
+import { latestThrow, type ThrowSnapshot } from "@/lib/presentation";
 import { PreferencesProvider, usePreferences } from "./preferences";
 import {
   COLORS,
@@ -80,42 +85,6 @@ function GridGlyph({ size }: { size: number }) {
     </span>
   );
 }
-function Cowries({
-  count,
-  shells,
-  rolling,
-}: {
-  count: number;
-  shells: boolean[];
-  rolling: boolean;
-}) {
-  const { t } = usePreferences();
-  return (
-    <div
-      className={`cowries ${rolling ? "throwing" : ""}`}
-      aria-label={t(
-        shells.length
-          ? `${shells.filter(Boolean).length} shells face up`
-          : `${count} cowrie shells`,
-      )}
-    >
-      {Array.from({ length: count }, (_, i) => (
-        <span
-          key={i}
-          className={`cowrie ${shells[i] === false ? "shell-down" : ""}`}
-          style={
-            {
-              "--shell-i": i,
-              "--angle": `${[-17, 12, -8, 19, -12, 8][i]}deg`,
-            } as CSSProperties
-          }
-        >
-          <i />
-        </span>
-      ))}
-    </div>
-  );
-}
 export default function GameApp() {
   return (
     <PreferencesProvider>
@@ -144,6 +113,59 @@ function GameScreen() {
     [copied, setCopied] = useState(false),
     [resume, setResume] = useState<Game | null>(null),
     [hydrated, setHydrated] = useState(false);
+  const {
+    rootRef,
+    focused,
+    toggleFocus,
+    exitFocus,
+    canImmerse,
+    immersive,
+    immerse,
+  } = usePlayView(game);
+  const [shot, setShot] = useState<ThrowSnapshot | null>(null),
+    [showShot, setShowShot] = useState(false),
+    [stillThrow, setStillThrow] = useState(false);
+  const seenGame = useRef(""),
+    seenThrow = useRef(""),
+    throwTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shotKey = latestThrow(game)?.key;
+  useEffect(() => {
+    const identity = game?.players[0]?.id || "";
+    const next = latestThrow(game);
+    if (identity !== seenGame.current) {
+      seenGame.current = identity;
+      seenThrow.current = next?.key || "";
+      setShot(next);
+      setShowShot(false);
+      return;
+    }
+    if (!next) {
+      seenThrow.current = "";
+      setShot(null);
+      setShowShot(false);
+      return;
+    }
+    if (seenThrow.current === next.key) return;
+    seenThrow.current = next.key;
+    setShot(next);
+    setShowShot(true);
+    const timer = setTimeout(() => setShowShot(false), 1400);
+    return () => clearTimeout(timer);
+  }, [shotKey, game?.players[0]?.id]);
+  useEffect(
+    () => () => {
+      if (throwTimer.current) clearTimeout(throwTimer.current);
+    },
+    [],
+  );
+  useEffect(() => {
+    if (!focused) return;
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !modal) exitFocus();
+    };
+    document.addEventListener("keydown", escape);
+    return () => document.removeEventListener("keydown", escape);
+  }, [focused, modal, exitFocus]);
   const gameRef = useRef(game),
     sessionRef = useRef(session),
     inFlight = useRef(false),
@@ -353,23 +375,46 @@ function GameScreen() {
     },
     [],
   );
-  const roll = useCallback(async () => {
-    if (inFlight.current || rolling) return;
-    setRolling(true);
-    chime();
-    if (sessionRef.current) {
-      await onlineAction("roll");
-      setTimeout(() => setRolling(false), 460);
-    } else {
-      setTimeout(() => {
-        setGame((g) => (g ? rollGame(g, randomShells(g.size)) : g));
-        setRolling(false);
-      }, 460);
-    }
-  }, [rolling, chime, onlineAction]);
+  const roll = useCallback(
+    async (instant = false) => {
+      if (inFlight.current || rolling || !gameRef.current) return;
+      setStillThrow(instant);
+      setShowShot(false);
+      setRolling(true);
+      chime();
+      const frame = rootRef.current?.querySelector(".board-frame");
+      if (frame && !focused) {
+        const rect = frame.getBoundingClientRect();
+        if (rect.top < 0 || rect.bottom > innerHeight - 90)
+          frame.scrollIntoView({ block: "center", behavior: "instant" });
+      }
+      const duration =
+        instant || matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? 0
+          : 300;
+      if (sessionRef.current) {
+        const start = performance.now();
+        await onlineAction("roll");
+        throwTimer.current = setTimeout(
+          () => setRolling(false),
+          Math.max(0, duration - (performance.now() - start)),
+        );
+      } else {
+        const expected = gameRef.current;
+        throwTimer.current = setTimeout(() => {
+          setGame((g) =>
+            g === expected ? rollGame(g, randomShells(g.size)) : g,
+          );
+          setRolling(false);
+        }, duration);
+      }
+    },
+    [rolling, chime, onlineAction, focused, rootRef],
+  );
   const move = useCallback(
     async (pawn: number) => {
       if (inFlight.current) return;
+      setShowShot(false);
       chime("move");
       if (sessionRef.current) await onlineAction("move", { pawn });
       else setGame((g) => (g ? moveGame(g, pawn) : g));
@@ -466,6 +511,9 @@ function GameScreen() {
     }
   }
   function clearTable() {
+    exitFocus();
+    setShowShot(false);
+    if (throwTimer.current) clearTimeout(throwTimer.current);
     setGame(null);
     setSession(null);
     setRolling(false);
@@ -521,7 +569,71 @@ function GameScreen() {
         ? "A game well played."
         : "Every move tells a story.";
   return (
-    <div className="app-shell">
+    <div
+      ref={rootRef}
+      className={`app-shell ${focused ? "is-focused" : ""} ${game?.phase === "playing" ? "is-playing" : ""} ${stillThrow ? "still-throw" : ""}`}
+    >
+      {focused && game && (
+        <div className="focus-topbar">
+          <div className="focus-game-name">
+            <Flower size={20} />
+            <span>
+              {t("chowka bara")}
+              <small>
+                {game.size} × {game.size} ·{" "}
+                {t(game.captureRequired ? "Capture to enter" : "Friendly race")}
+              </small>
+            </span>
+          </div>
+          <div>
+            {canImmerse && !immersive && (
+              <button
+                className="icon-button immersive-button"
+                onClick={immerse}
+                aria-label={t("Hide browser controls")}
+                title={t("Hide browser controls")}
+              >
+                <Maximize size={17} />
+              </button>
+            )}
+            <button
+              className="icon-button"
+              onClick={() => setModal("rules")}
+              aria-label={t("Rules")}
+            >
+              <CircleHelp size={18} />
+            </button>
+            <button
+              className="icon-button"
+              onClick={() => setSound(!sound)}
+              aria-label={t(sound ? "Mute sound" : "Enable sound")}
+            >
+              {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            </button>
+            <button
+              className="icon-button"
+              onClick={toggleFocus}
+              aria-label={t("Exit full screen")}
+              title={t("Exit full screen")}
+            >
+              <Minimize size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+      {focused && error && (
+        <div className="play-error-banner" role="alert">
+          <WifiOff size={16} />
+          <span>{t(error)}</span>
+          <button
+            className="icon-button"
+            onClick={() => setError("")}
+            aria-label={t("Close dialog")}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       <header className="site-header">
         <a
           href="/"
@@ -666,14 +778,30 @@ function GameScreen() {
                   {t(boardGame.size === 5 ? "CLASSIC" : "GRAND")}
                 </span>
               </div>
-              <button
-                className={`path-button ${showPath ? "selected" : ""}`}
-                onClick={() => setShowPath(!showPath)}
-                aria-pressed={showPath}
-              >
-                <Route size={14} />
-                <span>{t(showPath ? "Hide path" : "Show path")}</span>
-              </button>
+              <div className="table-view-actions">
+                {game && game.phase !== "lobby" && (
+                  <button
+                    className="focus-button"
+                    onClick={toggleFocus}
+                    aria-label={t(focused ? "Exit full screen" : "Full screen")}
+                    title={t(focused ? "Exit full screen" : "Full screen")}
+                    aria-pressed={focused}
+                  >
+                    {focused ? <Minimize size={15} /> : <Maximize size={15} />}
+                    <span>
+                      {t(focused ? "Exit full screen" : "Full screen")}
+                    </span>
+                  </button>
+                )}
+                <button
+                  className={`path-button ${showPath ? "selected" : ""}`}
+                  onClick={() => setShowPath(!showPath)}
+                  aria-pressed={showPath}
+                >
+                  <Route size={14} />
+                  <span>{t(showPath ? "Hide path" : "Show path")}</span>
+                </button>
+              </div>
             </div>
             <Board
               game={boardGame}
@@ -681,7 +809,93 @@ function GameScreen() {
               preview={!game || game.phase === "lobby"}
               showPath={showPath}
               onMove={move}
+              throwOverlay={
+                game?.phase === "playing" && (rolling || showShot) ? (
+                  <div
+                    className={`board-throw-layer ${rolling ? "is-tossing" : "is-result"}`}
+                  >
+                    <div
+                      className="board-throw-card"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <span className="overline">
+                        {rolling
+                          ? t(
+                              game.players[game.turn].name === "You"
+                                ? "Your turn"
+                                : `${game.players[game.turn].name}’s turn`,
+                            )
+                          : t(
+                              (shot?.name || game.players[game.turn].name) ===
+                                "You"
+                                ? "Your turn"
+                                : `${shot?.name || game.players[game.turn].name}’s turn`,
+                            )}
+                      </span>
+                      <Cowries
+                        count={shellCount(game.size)}
+                        shells={rolling ? [] : shot?.shells || game.shells}
+                        rolling={rolling}
+                      />
+                      <div className="board-throw-score">
+                        {rolling ? (
+                          <span>{t("Tossing…")}</span>
+                        ) : (
+                          <>
+                            <strong>{shot?.score}</strong>
+                            <span>
+                              {t(
+                                shot?.bonus
+                                  ? "BONUS THROW EARNED"
+                                  : "SPACES TO MOVE",
+                              )}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {!rolling && (
+                        <span className="throw-card-hint">
+                          {t(
+                            myTurn && game.roll !== null
+                              ? "Choose your pawn"
+                              : "The game is on",
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : null
+              }
             />
+            {game?.phase === "playing" && (
+              <div className="board-turn-caption" role="status">
+                <span
+                  className="result-dot"
+                  style={{ background: COLORS[game.players[game.turn].color] }}
+                />
+                <strong>
+                  {t(
+                    myTurn
+                      ? "Your turn"
+                      : `${game.players[game.turn].name}’s turn`,
+                  )}
+                </strong>
+                <span>
+                  {t(
+                    rolling
+                      ? "Tossing…"
+                      : game.roll !== null
+                        ? `Move ${game.roll} spaces`
+                        : game.bonus
+                          ? "A bonus throw. Make it count."
+                          : myTurn
+                            ? "Throw the cowries"
+                            : "Waiting for their next throw.",
+                  )}
+                </span>
+              </div>
+            )}
             <div className="table-bottom">
               <span className="small-flower">✳</span>
               <span>
@@ -1468,63 +1682,86 @@ function GameScreen() {
           )}
         </ModalDialog>
       )}
-      {game?.phase === "playing" && !modal && (
-        <div className="mobile-turn-bar">
-          <div>
-            <span
-              className="result-dot"
-              style={{ background: COLORS[game.players[game.turn].color] }}
-            />
-            <strong>
-              {t(
-                myTurn ? "Your turn" : `${game.players[game.turn].name}’s turn`,
-              )}
-            </strong>
-            <small>
-              {t(
-                rolling
-                  ? "Tossing…"
-                  : game.roll !== null
-                    ? `Move ${game.roll} spaces`
-                    : "Throw the cowries",
-              )}
-            </small>
-          </div>
-          {myTurn && game.roll !== null ? (
-            <div className="mobile-pawns">
-              {legalMoves(game).map((p) => (
-                <button
-                  key={p}
-                  disabled={!playable}
-                  onClick={() => void move(p)}
-                  aria-label={t(`Move pawn ${p + 1}`)}
-                >
-                  <span
-                    style={{
-                      background: COLORS[game.players[game.turn].color],
-                    }}
-                  >
-                    {p + 1}
-                  </span>
-                </button>
-              ))}
+      {game &&
+        (game.phase === "playing" || (focused && game.phase === "finished")) &&
+        !modal && (
+          <div className="mobile-turn-bar">
+            <div>
+              <span
+                className="result-dot"
+                style={{ background: COLORS[game.players[game.turn].color] }}
+              />
+              <strong>
+                {t(
+                  game.phase === "finished"
+                    ? "A game well played."
+                    : myTurn
+                      ? "Your turn"
+                      : `${game.players[game.turn].name}’s turn`,
+                )}
+              </strong>
+              <small>
+                {t(
+                  rolling
+                    ? "Tossing…"
+                    : game.roll !== null
+                      ? `Move ${game.roll} spaces`
+                      : "Throw the cowries",
+                )}
+              </small>
             </div>
-          ) : (
-            <button
-              className="primary-button"
-              disabled={!playable || game.roll !== null}
-              onClick={() => void roll()}
-            >
-              <Sparkles size={16} />
-              {t(rolling ? "Tossing…" : myTurn ? "Throw cowries" : "Waiting…")}
-              <ArrowRight size={15} />
-            </button>
-          )}
-        </div>
-      )}
+            {game.phase === "finished" ? (
+              <button
+                className="primary-button"
+                onClick={() => {
+                  exitFocus();
+                  requestAnimationFrame(() =>
+                    rootRef.current
+                      ?.querySelector(".game-panel")
+                      ?.scrollIntoView({ block: "start", behavior: "instant" }),
+                  );
+                }}
+              >
+                {t("View results")}
+                <ArrowRight size={16} />
+              </button>
+            ) : myTurn && game.roll !== null ? (
+              <div className="mobile-pawns">
+                {legalMoves(game).map((p) => (
+                  <button
+                    key={p}
+                    disabled={!playable}
+                    onClick={() => void move(p)}
+                    aria-label={t(`Move pawn ${p + 1}`)}
+                  >
+                    <span
+                      style={{
+                        background: COLORS[game.players[game.turn].color],
+                      }}
+                    >
+                      {p + 1}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <button
+                className="primary-button"
+                disabled={!playable || game.roll !== null}
+                onClick={() => void roll()}
+              >
+                <Sparkles size={16} />
+                {t(
+                  rolling ? "Tossing…" : myTurn ? "Throw cowries" : "Waiting…",
+                )}
+                <ArrowRight size={15} />
+              </button>
+            )}
+          </div>
+        )}
       <KeyboardThrow
         enabled={playable && game?.roll === null && !modal}
-        onThrow={roll}
+        onThrow={() => void roll(true)}
       />
     </div>
   );

@@ -11,12 +11,14 @@ import {
   type Game,
   type Point,
 } from "@/lib/game";
+const GRAINS = ["Kidney beans", "Green gram", "Chickpeas", "Rice grains"];
 interface Props {
   game: Game;
   canPlay: boolean;
   preview?: boolean;
   showPath: boolean;
   onMove: (pawn: number) => void;
+  throwOverlay?: React.ReactNode;
 }
 export const Board = memo(function Board({
   game: g,
@@ -24,6 +26,7 @@ export const Board = memo(function Board({
   preview,
   showPath,
   onMove,
+  throwOverlay,
 }: Props) {
   const { t } = usePreferences();
   const [hover, setHover] = useState<number | null>(null);
@@ -82,6 +85,7 @@ export const Board = memo(function Board({
                       : `${p.pawns.filter((v) => v === playerPath(n, p.color).length - 1).length}/4 home`,
                 )}
                 {t(p.bot ? " · Computer" : "")}
+                <span className="grain-name"> · {t(GRAINS[p.color])}</span>
               </span>
             </div>
             {!preview && g.turn === i && g.phase === "playing" && (
@@ -161,14 +165,14 @@ export const Board = memo(function Board({
                         : 4;
                 const rows = Math.ceil(tokens.length / cols);
                 const dx =
-                  ((stack % cols) - (cols - 1) / 2) * (n === 7 ? 13 : 18);
+                  ((stack % cols) - (cols - 1) / 2) * (n === 7 ? 17 : 20);
                 const dy =
                   (Math.floor(stack / cols) - (rows - 1) / 2) *
-                  (n === 7 ? 13 : 18);
+                  (n === 7 ? 17 : 20);
                 return (
                   <button
                     key={`${p.id}-${token.pawn}`}
-                    className={`pawn ${eligible ? "movable" : ""} ${token.home ? "arrived" : ""}`}
+                    className={`pawn grain-${p.color} ${eligible ? "movable" : ""} ${token.home ? "arrived" : ""}`}
                     disabled={!eligible}
                     onClick={() => onMove(token.pawn)}
                     onMouseEnter={() => setHover(token.pawn)}
@@ -181,6 +185,8 @@ export const Board = memo(function Board({
                     style={
                       {
                         "--player": COLORS[p.color],
+                        "--col": token.point[1] + 0.5,
+                        "--row": token.point[0] + 0.5,
                         left: `${((token.point[1] + 0.5) / n) * 100}%`,
                         top: `${((token.point[0] + 0.5) / n) * 100}%`,
                         "--dx": `${dx}px`,
@@ -194,12 +200,14 @@ export const Board = memo(function Board({
                       } as CSSProperties
                     }
                   >
-                    <span>{token.pawn + 1}</span>
+                    <i className="grain-body" aria-hidden="true" />
+                    <span className="pawn-number">{token.pawn + 1}</span>
                   </button>
                 );
               }),
             )}
           </div>
+          {throwOverlay}
           <div className="board-letters" aria-hidden="true">
             {Array.from({ length: n }, (_, i) => (
               <span key={i}>{String.fromCharCode(65 + i)}</span>

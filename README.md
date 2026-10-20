@@ -61,3 +61,11 @@ A quiet courtyard palette, DM Serif Display for the heritage character, DM Sans 
 ## Preferences
 
 Use the moon/sun button in the header for dark or light mode and the Kannada/English button to switch languages. Preferences stay on the current device, independently of other room members. Kannada covers setup, gameplay, rules, dialogs, activity, and errors. The initial theme follows the system preference until explicitly changed.
+
+## Focused phone play
+
+Phone games open in a viewport-filling play layout with the board, current turn, and large pawn/throw controls together. Exit using the top-right minimize control; the game is preserved. The board toolbar can reopen full-screen play. Where the browser supports native fullscreen, the focused header also offers a control to hide browser chrome; unsupported browsers retain the same focused layout. `viewport-fit=cover`, dynamic viewport units, safe-area padding, and scroll containment keep controls within the available viewport.
+
+Cowrie throws now animate over the visible board. Results retain the original thrower and score even when a skipped move has already advanced the turn. Local and online play share this presentation. Keyboard throws and reduced-motion settings skip tumbling. Shell and pawn movement uses transform/opacity animation without an animation-library dependency.
+
+The pieces use procedural grain artwork: kidney beans, green gram, chickpeas, and rice, with visible pawn numbers and reachable move buttons. Brown cowries include modeled mouths and shell texture. No remote image downloads are needed during play. Phone layout was checked in a 430×780 browser viewport, including both board sizes; device-specific Safari gestures and physical-device feel still need a hardware check.

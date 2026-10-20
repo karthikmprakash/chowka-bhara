@@ -1,5 +1,14 @@
 export type Language = "en" | "kn";
 export const kannada: Record<string, string> = {
+  "Hide browser controls": "ಬ್ರೌಸರ್ ನಿಯಂತ್ರಣಗಳನ್ನು ಮರೆಮಾಡಿ",
+  "Full screen": "ಪೂರ್ಣ ಪರದೆ",
+  "Exit full screen": "ಪೂರ್ಣ ಪರದೆಯಿಂದ ಹೊರಬನ್ನಿ",
+  "View results": "ಫಲಿತಾಂಶ ನೋಡಿ",
+  "The game is on": "ಆಟ ಮುಂದುವರಿಯುತ್ತಿದೆ",
+  "Kidney beans": "ರಾಜ್ಮಾ",
+  "Green gram": "ಹೆಸರು ಕಾಳು",
+  Chickpeas: "ಕಡಲೆ ಕಾಳು",
+  "Rice grains": "ಅಕ್ಕಿ ಕಾಳು",
   "chowka bara": "ಚೌಕ ಬಾರ",
   "Chowka Bara home": "ಚೌಕ ಬಾರ ಮುಖಪುಟ",
   "THE INDIAN GAME TABLE": "ಭಾರತೀಯ ಸಾಂಪ್ರದಾಯಿಕ ಆಟ",
