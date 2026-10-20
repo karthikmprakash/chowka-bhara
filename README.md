@@ -14,9 +14,12 @@ game/        Next.js + Vinext/Vite app, deployed as a Cloudflare Worker with D1
   worker/        Worker entrypoint
   lib/           Game engine, room API, translations
   drizzle/       Tracked D1 migration
+android/      Capacitor Android app: a native shell around the same game
+  README.md      Build, signing, and the native bridge
 ```
 
-See `game/README.md` for setup, testing, game rules, and architecture.
+See `game/README.md` for setup, testing, game rules, and architecture, and
+[`android/README.md`](./android/README.md) for the Android app.
 
 ## Requirements
 
@@ -29,3 +32,28 @@ npm run build
 npm run db:migrate
 npm run dev
 ```
+
+## Deploy the web app
+
+```sh
+cd game
+npx wrangler d1 create chowka-bara     # once
+# put the printed database_id in wrangler.json
+npm run db:migrate:remote
+npm run deploy
+```
+
+## Android app
+
+The Android app is a native shell that loads the deployed Worker in a
+WebView, so the game, the rules and the rooms are the same code as on the web.
+
+```sh
+npm ci
+cd game && npm ci && npm run build && cd ..
+npm run android:build
+```
+
+The debug APK is written to
+`android/app/build/outputs/apk/debug/app-debug.apk`. See
+[`android/README.md`](./android/README.md) for signing and release builds.
