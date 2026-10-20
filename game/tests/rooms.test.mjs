@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-const base = process.env.TEST_URL || "http://127.0.0.1:5173";
+const base = process.env.TEST_URL || "http://localhost:5173";
 async function call(path, body, token) {
   const r = await fetch(base + path, {
     method: body ? "POST" : "GET",

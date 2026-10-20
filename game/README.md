@@ -9,7 +9,7 @@ Requires Node.js 22.13 or newer.
 ```sh
 npm ci
 npm run build
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_careful_shatterstar.sql
+npm run db:migrate
 npm run dev
 ```
 
@@ -48,11 +48,25 @@ A capture resets every rival pawn at the destination to its home square and earn
 - `lib/game.ts`: deterministic immutable game engine shared by local play, bots, server actions, and tests.
 - `lib/rooms.ts`: server-authoritative multiplayer API. Only the server generates online throws using cryptographic randomness. Private seat tokens never appear in public room state.
 - `db/schema.ts` and `drizzle/`: Cloudflare D1 room persistence. Optimistic compare-and-swap revisions reject concurrent or stale actions.
+- `worker/index.ts` and `wrangler.json`: the Worker entrypoint and the shared Cloudflare configuration for the `DB` binding.
 - `components/board.tsx`: a DOM board with memoized paths, accessible numbered pawns, legal targets, and CSS position transitions.
 - `components/game-app.tsx`: setup, lobby, turn controls, AI, reconnect, autosave, rules, and rematches.
 - Room clients synchronize every second while visible and every five seconds in the background. Local play has no network dependency after loading. No WebSocket service is required.
 
-Hosting uses the Sites plugin's Cloudflare Worker/D1 deployment. `.openai/hosting.json` identifies the Site and its `DB` binding. The tracked SQL migration provisions hosted tables during publication. The Site is public; room codes permit joining before the host starts, and each player receives a private seat token. Rooms become inaccessible after expiry. Expiration is not a database deletion policy.
+Hosting is a plain Cloudflare Worker with a D1 database. `wrangler.json` is the single source of truth for the worker name, compatibility flags, and the `DB` binding; `vite.config.ts` reads the same file so local development, migrations, and deployment never drift. The tracked SQL migration provisions the `rooms` table. The app is public; room codes permit joining before the host starts, and each player receives a private seat token. Rooms become inaccessible after expiry. Expiration is not a database deletion policy.
+
+## Deploy
+
+Create the database once, then publish it with its id:
+
+```sh
+npx wrangler d1 create chowka-bara
+# copy the printed database_id into wrangler.json
+npm run db:migrate:remote
+npm run deploy
+```
+
+`npm run deploy` builds the Worker and uploads it with the generated `dist/server/wrangler.json`. Set `database_id` to your own D1 database id before deploying; the placeholder in `wrangler.json` only exists so a local database can be created.
 
 ## Design & accessibility
 
