@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Deploy archives (build outputs, not source)
+*.tar.gz
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+
+# Env files
+.env*
+!.env.example
