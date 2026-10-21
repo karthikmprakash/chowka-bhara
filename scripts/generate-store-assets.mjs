@@ -47,10 +47,9 @@ async function icon() {
 }
 
 async function feature() {
-  const [serif, sans, kannada, board] = await Promise.all([
+  const [serif, sans, board] = await Promise.all([
     readFile(path.join(root, "game/public/fonts/dm-serif.ttf")),
     readFile(path.join(root, "game/public/fonts/dm-sans.ttf")),
-    readFile(path.join(root, "game/public/fonts/noto-kannada.ttf")),
     readFile(path.join(source, "board.png")),
   ]);
   const data = (buf) => `data:font/ttf;base64,${buf.toString("base64")}`;
@@ -62,7 +61,6 @@ async function feature() {
 <style>
   @font-face { font-family: Serif; src: url(${data(serif)}); }
   @font-face { font-family: Sans; src: url(${data(sans)}); }
-  @font-face { font-family: Kannada; src: url(${data(kannada)}); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     width: 1024px; height: 500px; overflow: hidden;
@@ -101,10 +99,11 @@ async function feature() {
     margin-top: 20px; font-size: 13px; color: ${ACCENT};
     letter-spacing: .4px; font-weight: 600;
   }
-  .kannada {
-    position: absolute; left: 64px; bottom: 34px;
-    font-family: Kannada, Serif, serif; font-size: 17px; color: #6f7868;
+  .signoff {
+    position: absolute; left: 64px; bottom: 32px;
+    font-family: Serif, Georgia, serif; font-size: 20px; color: #6f7868;
   }
+  .signoff .dot { color: ${ACCENT}; }
   .art {
     position: absolute; right: 62px; top: 52px;
     width: 378px; height: 378px;
@@ -145,7 +144,7 @@ async function feature() {
       <span class="chip">2–4 players</span>
       <span class="chip">Online rooms</span>
       <span class="chip">5×5 &amp; 7×7</span>
-      <span class="chip">English · ಕನ್ನಡ</span>
+      <span class="chip">Beginner &amp; advanced</span>
     </div>
     <div class="free">Free to play · No ads · No sign-up</div>
   </div>
@@ -153,7 +152,7 @@ async function feature() {
     <div class="ring"></div>
     <img src="data:image/png;base64,${board.toString("base64")}" alt="">
   </div>
-  <div class="kannada">ಆಡೋಣ ಬನ್ನಿ — come, let's play.</div>
+  <div class="signoff">Come, let's play<span class="dot">.</span></div>
   <div class="corner">CHOWKA BARA</div>
 </body>
 </html>`;
