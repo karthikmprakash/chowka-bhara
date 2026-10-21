@@ -91,6 +91,10 @@ test("Room lifecycle: seats, socket auth, host start, throw broadcast, resign, r
   const first = await h.next(state((g) => g.players.length === 1), "host table");
   assert.equal(first.playerId, host.playerId);
 
+  // The phone client keeps the link honest with a ping; the room answers it.
+  h.send({ t: "ping" });
+  await h.next((m) => m.t === "pong", "pong");
+
   // A made-up seat token is refused instead of opening a seat.
   const stranger = socket(host.code);
   await stranger.open;
