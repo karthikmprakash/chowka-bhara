@@ -4466,39 +4466,45 @@ html[data-theme="dark"] .throw-button.primary-button {
   padding: 0 3px;
   z-index: 3;
 }
-/* The gate into the inner circle, shown on the square that blocks it. */
+/* The gate into the inner circle, shown on the square that blocks it. The
+   fill is half transparent so the square keeps showing through it. */
 .gate-lock {
   position: absolute;
-  top: 3px;
-  right: 3px;
+  top: 2px;
+  right: 2px;
   z-index: 4;
-  width: 18px;
-  height: 18px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   border: 1px solid transparent;
   pointer-events: none;
+  backdrop-filter: blur(1px);
+}
+.gate-lock svg {
+  width: 14px;
+  height: 14px;
 }
 .gate-lock.is-locked {
   color: #8e3826;
-  background: #f6e3da;
-  border-color: #e6c4b4;
+  background: rgb(246 227 218 / 50%);
+  border-color: rgb(213 168 148 / 60%);
 }
 .gate-lock.is-open {
   color: #2e5143;
-  background: #e2ecdb;
-  border-color: #c3d4b7;
+  background: rgb(226 236 219 / 50%);
+  border-color: rgb(169 194 151 / 60%);
 }
 html[data-theme="dark"] .gate-lock.is-locked {
   color: #f0b7a3;
-  background: #3a2019;
-  border-color: #6b3a2a;
+  background: rgb(58 32 25 / 55%);
+  border-color: rgb(140 84 62 / 65%);
 }
 html[data-theme="dark"] .gate-lock.is-open {
   color: #cfe2bd;
-  background: #22321f;
-  border-color: #4a5f3c;
+  background: rgb(34 50 31 / 55%);
+  border-color: rgb(90 116 74 / 65%);
 }
 .route-explanation {
   display: flex;
@@ -5266,5 +5272,164 @@ html[data-theme="dark"] .gate-lock.is-open {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+/* The throw button.
+   It is the action that starts every turn, so it is built to feel like an
+   object on the table: a shallow tray of cowries, a pressed edge, and a quiet
+   halo while it waits for a hand. */
+.throw-button.primary-button {
+  position: relative;
+  isolation: isolate;
+}
+.throw-button .throw-shells {
+  border-radius: 13px;
+  background: #5f2818b8;
+  box-shadow:
+    inset 0 2px 7px #4215075c,
+    inset 0 -1px 0 #ffffff1f;
+}
+/* The cowries lift a little as the button becomes ready, once, as an invite. */
+@keyframes cowrie-invite {
+  0%,
+  100% {
+    transform: rotate(var(--angle)) translateY(0);
+  }
+  38% {
+    transform: rotate(var(--angle)) translateY(-13%);
+  }
+  68% {
+    transform: rotate(var(--angle)) translateY(2%);
+  }
+}
+.throw-button.primary-button:not(:disabled)[aria-busy="false"]
+  .throw-shells
+  .cowrie {
+  animation: cowrie-invite 820ms var(--ease-game) both;
+  animation-delay: calc(var(--shell-i) * 55ms);
+}
+/* A slow halo, so the eye finds the next action without any noise. */
+@keyframes throw-halo {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.995);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+}
+.throw-button.primary-button:not(:disabled)::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 20px;
+  border: 2px solid #b9593f;
+  animation: throw-halo 3.4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+/* Pressed: the edge closes, the button sits down on the table, and it rattles
+   very slightly, like a cup of cowries in the hand. */
+@keyframes throw-rattle {
+  0% {
+    transform: translateY(3px) rotate(0deg);
+  }
+  30% {
+    transform: translateY(3px) rotate(-1.1deg);
+  }
+  65% {
+    transform: translateY(3px) rotate(0.9deg);
+  }
+  100% {
+    transform: translateY(3px) rotate(0deg);
+  }
+}
+.throw-button.primary-button:active:not(:disabled) {
+  animation: throw-rattle 260ms ease-out;
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 2px 5px #4a1d0f59,
+    inset 0 -1px 0 #ffffff14,
+    0 0 0 #793425;
+}
+.throw-button.primary-button:active:not(:disabled) .throw-shells .cowrie {
+  animation: none;
+  transform: rotate(var(--angle)) translateY(6%) scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .throw-button.primary-button::after {
+    display: none;
+  }
+  .throw-button.primary-button .throw-shells .cowrie,
+  .throw-button.primary-button:active:not(:disabled) {
+    animation: none;
+  }
+}
+
+/* On a phone the throw button keeps a small tray of cowries beside the
+   label: the action should look like the game, not like a web button. */
+@media (max-width: 700px) {
+  .mobile-turn-bar .throw-button.primary-button,
+  .is-focused .mobile-turn-bar .throw-button.primary-button {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 9px;
+    padding-left: 8px;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .mobile-turn-bar .throw-button .throw-shells,
+  .is-focused .mobile-turn-bar .throw-button .throw-shells {
+    display: grid;
+    position: relative;
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: 10px;
+    background: #4d1c0d5c;
+    box-shadow:
+      inset 0 2px 5px #360f0347,
+      inset 0 -1px 0 #ffffff1a;
+    place-items: center;
+    overflow: hidden;
+  }
+  .mobile-turn-bar .throw-button .throw-shells .cowries {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 132px;
+    margin: 0;
+    transform: translate(-50%, -50%) scale(0.26);
+  }
+  .mobile-turn-bar .throw-button .throw-copy,
+  .is-focused .mobile-turn-bar .throw-button .throw-copy {
+    position: relative;
+    z-index: 1;
+  }
+  /* It arrives as it becomes tappable, so the eye catches the new turn. */
+  @keyframes throw-arrive {
+    0% {
+      transform: scale(0.94);
+    }
+    60% {
+      transform: scale(1.015);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  .mobile-turn-bar .throw-button:not(:disabled)[aria-busy="false"],
+  .is-focused
+    .mobile-turn-bar
+    .throw-button:not(:disabled)[aria-busy="false"] {
+    animation: throw-arrive 420ms var(--ease-game);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-turn-bar .throw-button:not(:disabled)[aria-busy="false"] {
+      animation: none;
+    }
   }
 }
