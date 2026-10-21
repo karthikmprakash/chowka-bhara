@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy policy · Chowka Bara",
@@ -14,7 +13,7 @@ export default function PrivacyPage() {
   return (
     <div className="policy-shell">
       <header className="policy-header">
-        <Link href="/" className="policy-brand" aria-label="Chowka Bara home">
+        <a href="/" className="policy-brand" aria-label="Chowka Bara home">
           <span className="brand-symbol" aria-hidden="true">
             <i />
             <i />
@@ -25,10 +24,10 @@ export default function PrivacyPage() {
             chowka bara<span className="brand-period">.</span>
             <small>THE INDIAN GAME TABLE</small>
           </span>
-        </Link>
-        <Link href="/" className="policy-back">
+        </a>
+        <a href="/" className="policy-back">
           Back to the game
-        </Link>
+        </a>
       </header>
 
       <main className="policy">
@@ -242,7 +241,7 @@ export default function PrivacyPage() {
 
       <footer className="policy-footer">
         <span>ಆಡೋಣ ಬನ್ನಿ</span>
-        <Link href="/">Return to the table</Link>
+        <a href="/">Return to the table</a>
       </footer>
     </div>
   );
