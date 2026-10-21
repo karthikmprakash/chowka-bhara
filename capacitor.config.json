@@ -3,7 +3,7 @@
   "appName": "Chowka Bara",
   "webDir": "game/dist/client",
   "server": {
-    "url": "https://chowka-bara.mkarthikprakash-work.workers.dev",
+    "url": "https://chowka-bara.karthikmprakash.online",
     "androidScheme": "https",
     "cleartext": false
   },
