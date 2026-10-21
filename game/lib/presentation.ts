@@ -1,6 +1,7 @@
 import { scoreShells, shellCount, type Game } from "./game.ts";
 export interface ThrowSnapshot {
   key: string;
+  playerId: string;
   name: string;
   color: number;
   shells: boolean[];
@@ -17,11 +18,43 @@ export function latestThrow(game: Game | null): ThrowSnapshot | null {
     count = shellCount(game.size);
   return {
     key: `${game.players[0].id}:${entry.id}`,
+    playerId: player.id,
     name: player.name,
     color: player.color,
     shells: [...game.shells],
     score,
     bonus: score === count || score === count * 2,
+  };
+}
+
+export interface ThrowingPlayer {
+  id: string;
+  name: string;
+  color: number;
+}
+
+/** A throw is live from the roll until the pawn it moved has been placed. */
+export interface LiveThrow {
+  playerId: string;
+  name: string;
+  color: number;
+  shells: boolean[];
+  score: number;
+  bonus: boolean;
+}
+
+export function currentThrow(game: Game): LiveThrow | null {
+  if (game.phase !== "playing" || game.roll === null) return null;
+  const player = game.players[game.turn];
+  if (!player) return null;
+  const count = shellCount(game.size);
+  return {
+    playerId: player.id,
+    name: player.name,
+    color: player.color,
+    shells: [...game.shells],
+    score: game.roll,
+    bonus: game.roll === count || game.roll === count * 2,
   };
 }
 

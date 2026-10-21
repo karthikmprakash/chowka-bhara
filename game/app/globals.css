@@ -3268,69 +3268,6 @@ html[data-theme="dark"] .cowrie {
   border-radius: 4px;
   min-height: 32px;
 }
-.board-throw-layer {
-  position: absolute;
-  inset: 11px;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f3efdf77;
-  pointer-events: none;
-  animation: throw-reveal 160ms var(--ease-game);
-}
-.board-throw-card {
-  padding: 21px 24px 18px;
-  min-width: 205px;
-  max-width: 90%;
-  background: #fff8e9f5;
-  border: 1px solid #b9a17c;
-  border-radius: 16px;
-  box-shadow: 0 12px 45px #4537252e;
-  text-align: center;
-  transform: translateZ(0);
-}
-.board-throw-card > .overline {
-  display: block;
-  margin-bottom: 18px;
-  letter-spacing: 0.5px;
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #7d6345;
-}
-.board-throw-card .cowries {
-  gap: 12px;
-  min-height: 58px;
-}
-.board-throw-score {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 40px;
-  margin-top: 12px;
-  color: #573b25;
-}
-.board-throw-score strong {
-  font: 400 42px/1 var(--serif);
-}
-.board-throw-score span {
-  font-size: 9px;
-  max-width: 100px;
-  line-height: 1.65;
-  letter-spacing: 0.6px;
-}
-.throw-card-hint {
-  display: block;
-  font-size: 10px;
-  color: #806e54;
-  margin-top: 8px;
-}
-.board-throw-layer.is-result .cowrie {
-  animation: cowrie-settle 180ms var(--ease-game);
-}
 @keyframes cowrie-settle {
   from {
     transform: translateY(-6px) rotate(calc(var(--angle) + 20deg));
@@ -3588,21 +3525,6 @@ html.playing-focused,
 html.playing-focused body {
   overscroll-behavior: none;
 }
-html[data-theme="dark"] .board-throw-layer {
-  background: #12211777;
-}
-html[data-theme="dark"] .board-throw-card {
-  background: #2d3828fa;
-  border-color: #87916a;
-  box-shadow: 0 12px 45px #0005;
-}
-html[data-theme="dark"] .board-throw-card > .overline,
-html[data-theme="dark"] .throw-card-hint {
-  color: #c7cfac;
-}
-html[data-theme="dark"] .board-throw-score {
-  color: #f0e4c3;
-}
 html[data-theme="dark"] .board-turn-caption {
   border-color: #415440;
 }
@@ -3646,13 +3568,6 @@ html[data-theme="dark"] .board-turn-caption {
   }
   .is-focused .grain-name {
     display: none;
-  }
-  .board-throw-card {
-    padding: 17px 18px 15px;
-    min-width: 190px;
-  }
-  .board-throw-card .cowries {
-    gap: 8px;
   }
   .is-playing .board-key {
     gap: 15px;
@@ -3724,24 +3639,17 @@ html[data-theme="dark"] .board-turn-caption {
     min-height: 62px;
   }
 }
-.still-throw .throwing .cowrie,
-.still-throw .is-result .cowrie {
+/* Keyboard throws are deliberate and instant: no tumble anywhere. */
+.still-throw .throwing .cowrie {
   animation: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  .throwing .cowrie,
-  .board-throw-layer.is-result .cowrie {
+  .throwing .cowrie {
     animation: none;
     will-change: auto;
   }
   .pawn {
     transition: none !important;
-  }
-  .board-throw-layer {
-    animation: throw-reveal 120ms linear !important;
-  }
-  .board-throw-card {
-    transform: none;
   }
 }
 .play-error-banner {
@@ -3770,9 +3678,6 @@ html[data-theme="dark"] .play-error-banner {
   background: #523b2b;
   color: #f2cba8;
   border-color: #937755;
-}
-.still-throw .board-throw-layer {
-  animation: none !important;
 }
 @media (max-width: 380px) {
   .focus-topbar:has(.immersive-button) .focus-game-name > span {
@@ -3828,17 +3733,6 @@ html[data-theme="dark"] .play-error-banner {
   text-shadow: 0 1px 1px #fff7d7aa;
 }
 @media (max-width: 380px) {
-  .board-throw-card {
-    padding: 15px 13px;
-    min-width: 170px;
-  }
-  .board-throw-card .cowries:has(.cowrie:nth-child(6)) {
-    gap: 6px;
-  }
-  .board-throw-card .cowries:has(.cowrie:nth-child(6)) .cowrie {
-    width: 22px;
-    height: 33px;
-  }
 }
 
 /* A familiar household: cotton, red oxide and hand-painted portraits. */
@@ -4425,17 +4319,19 @@ html[data-theme="dark"] .throw-button.primary-button {
   stroke-width: 4;
   opacity: 0.42;
 }
+/* The whole route is drawn to the centre. A shut gate only shifts the inner
+   stretch to the quiet tone; it never hides where the road goes. */
 .route-map .route-inner {
   stroke: var(--muted);
-  stroke-width: 2;
-  stroke-dasharray: 3 8;
-  opacity: 0.4;
+  stroke-width: 3;
+  stroke-dasharray: none;
+  opacity: 0.45;
 }
 .route-map.is-unlocked .route-inner {
   stroke: var(--route-color);
-  stroke-width: 3;
+  stroke-width: 3.5;
   stroke-dasharray: none;
-  opacity: 0.4;
+  opacity: 0.42;
 }
 .route-map line {
   stroke: currentColor;
@@ -4518,14 +4414,22 @@ html[data-theme="dark"] .gate-lock.is-open {
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
 }
+/* The name is short and must never be the thing that gets clipped: the
+   sentence wraps instead. */
 .route-explanation strong {
-  max-width: 75px;
+  flex: 0 0 auto;
+  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--ink);
 }
+.route-explanation > .route-key-dot {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
 .route-explanation > span:last-child {
+  min-width: 0;
   max-width: 400px;
 }
 .route-key-dot {

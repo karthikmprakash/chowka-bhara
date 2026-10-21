@@ -23,7 +23,6 @@ interface Props {
   preview?: boolean;
   showPath: boolean;
   onMove: (pawn: number) => void;
-  throwOverlay?: React.ReactNode;
   travel?: PawnTravel | null;
   /** Whose side of the board sits at the bottom. Defaults to the player to move. */
   viewerColor?: number;
@@ -34,7 +33,6 @@ export const Board = memo(function Board({
   preview,
   showPath,
   onMove,
-  throwOverlay,
   travel,
   viewerColor,
 }: Props) {
@@ -253,7 +251,6 @@ export const Board = memo(function Board({
               }),
             )}
           </div>
-          {throwOverlay}
           <div className="board-letters" aria-hidden="true">
             {Array.from({ length: n }, (_, i) => (
               <span key={i}>{String.fromCharCode(65 + i)}</span>

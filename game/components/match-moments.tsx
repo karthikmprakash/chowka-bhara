@@ -11,6 +11,11 @@ export function momentCopy(kind: MatchMoment["kind"]) {
       : { title: "Welcome home.", note: "Another throw is yours." };
 }
 
+/** A two-word version for the compact phone tray. */
+export function momentLabel(kind: MatchMoment["kind"]) {
+  return kind === "victory" ? "Won!" : kind === "capture" ? "Capture!" : "Home!";
+}
+
 /** The celebration card that floats over the table on a wide screen. */
 export function MatchMomentCard({ moment }: { moment: MatchMoment | null }) {
   const { t } = usePreferences();

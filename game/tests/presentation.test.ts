@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { newGame, rollGame, moveGame, basePath } from "../lib/game.ts";
-import { latestThrow, pawnTravel, travelFrame } from "../lib/presentation.ts";
+import { currentThrow, latestThrow, pawnTravel, travelFrame } from "../lib/presentation.ts";
 test("No throw is shown for an empty or newly opened game", () => {
   assert.equal(latestThrow(null), null);
   assert.equal(latestThrow(newGame()), null);
@@ -42,6 +42,58 @@ test("Different games cannot reuse an old result even at the same move number", 
   const a = rollGame(newGame(), [true, false, false, false]),
     b = rollGame(newGame(), [true, false, false, false]);
   assert.notEqual(latestThrow(a)?.key, latestThrow(b)?.key);
+});
+
+test("A throw is live only while its pawn is still to be placed", () => {
+  const g = newGame(5, "local");
+  assert.equal(currentThrow(g), null);
+  const rolled = rollGame(g, [true, true, false, false]);
+  assert.equal(currentThrow(rolled)?.score, 2);
+  assert.equal(currentThrow(rolled)?.playerId, g.players[0].id);
+  assert.equal(currentThrow(rolled)?.bonus, false);
+  const moved = moveGame(rolled, 0);
+  // Once the pawn is placed the turn is spent, so no score is left behind.
+  assert.equal(moved.turn, 1);
+  assert.equal(currentThrow(moved), null);
+});
+
+test("A live throw follows the turn to the next player and never lingers", () => {
+  const g = newGame(5, "local");
+  const moved = moveGame(rollGame(g, [true, true, false, false]), 0);
+  const next = rollGame(moved, [true, false, false, false]);
+  assert.equal(currentThrow(next)?.playerId, g.players[1].id);
+  assert.equal(currentThrow(next)?.score, 1);
+  assert.equal(currentThrow(moveGame(next, 0)), null);
+});
+
+test("A skipped or reset turn has no live throw to show", () => {
+  const g = newGame();
+  const end = basePath(5).length - 1;
+  g.players[0].pawns = [end, end, end, end - 1];
+  const skipped = rollGame(g, [true, true, false, false]);
+  assert.equal(skipped.roll, null);
+  assert.equal(currentThrow(skipped), null);
+});
+
+test("A capture bonus does not relabel an ordinary cowrie result as a shell bonus", () => {
+  const g = newGame(5, "local");
+  g.players[1].pawns[0] = 9;
+  const rolled = rollGame(g, [true, false, false, false]);
+  assert.equal(currentThrow(rolled)?.bonus, false);
+  const captured = moveGame(rolled, 0);
+  assert.equal(captured.bonus, true);
+  assert.equal(currentThrow(captured), null);
+});
+
+test("Both board sizes report the real shell count and a shell bonus", () => {
+  for (const size of [5, 7] as const) {
+    const count = size === 5 ? 4 : 6;
+    const g = rollGame(newGame(size), Array(count).fill(false));
+    assert.equal(currentThrow(g)?.shells.length, count);
+    assert.equal(currentThrow(g)?.score, count * 2);
+    assert.equal(currentThrow(g)?.bonus, true);
+    assert.equal(currentThrow(newGame(size)), null);
+  }
 });
 
 for (const size of [5, 7] as const) {
