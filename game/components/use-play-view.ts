@@ -10,13 +10,19 @@ export function usePlayView(game: Game | null) {
     [immersive, setImmersive] = useState(false),
     [canImmerse, setCanImmerse] = useState(false);
   useEffect(() => {
-    // The native shell can always give the board the whole screen, even where
-    // the web fullscreen API is unavailable.
     setCanImmerse(
       isNativeApp() ||
         (!!document.fullscreenEnabled && !!rootRef.current?.requestFullscreen),
     );
   }, []);
+  useEffect(() => {
+    // On a phone the board owns the whole screen: the system bars step aside
+    // as soon as the game takes over.
+    if (!isNativeApp()) return;
+    setNativeImmersive(
+      focused && window.matchMedia("(max-width: 700px)").matches,
+    );
+  }, [focused]);
   useEffect(() => {
     const key = game ? `${game.players[0]?.id}:${game.phase}` : "";
     if (key === lastPhase.current) return;

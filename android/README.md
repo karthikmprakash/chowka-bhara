@@ -80,8 +80,10 @@ unchanged for the web build.
   page uses them for its own spacing. The page reads them through the
   `--inset-*` custom properties in `game/app/globals.css`.
 - **Status bar.** The icons follow the in-app light and dark theme.
-- **Immersive play.** "Hide browser controls" hides the system bars, the same
-  way the browser's fullscreen hides the browser chrome.
+- **Immersive board.** A game on a phone takes the whole screen: the system
+  bars step aside as soon as the board appears, and come back when you leave.
+- **Leaving.** The game screen has one clear way out, and it returns to the
+  main page with the game kept for another day.
 - **Haptics.** A throw taps the vibrator, and a pawn landing taps it again.
 - **Sharing.** The invite opens the device's own share sheet, with the room
   code and the link.

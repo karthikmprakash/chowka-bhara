@@ -848,7 +848,7 @@ function GameScreen() {
             </span>
           </div>
           <div>
-            {canImmerse && !immersive && (
+            {canImmerse && !immersive && !compact && (
               <button
                 className="icon-button immersive-button"
                 onClick={immerse}
@@ -872,14 +872,25 @@ function GameScreen() {
             >
               {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
             </button>
-            <button
-              className="icon-button"
-              onClick={toggleFocus}
-              aria-label={t("Exit full screen")}
-              title={t("Exit full screen")}
-            >
-              <Minimize size={18} />
-            </button>
+            {compact ? (
+              <button
+                className="icon-button exit-button"
+                onClick={() => setModal("leave")}
+                aria-label={t("Leave the game")}
+                title={t("Leave the game")}
+              >
+                <X size={20} />
+              </button>
+            ) : (
+              <button
+                className="icon-button"
+                onClick={toggleFocus}
+                aria-label={t("Exit full screen")}
+                title={t("Exit full screen")}
+              >
+                <Minimize size={18} />
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -1018,31 +1029,26 @@ function GameScreen() {
       </header>
       <main>
         <section className="page-heading">
-          <div>
-            <div className="eyebrow">
-              <span className="tiny-star">✳</span>{" "}
-              {t("A CLASSIC, BACK AT THE TABLE ")}
-            </div>
-            <h1>{t(title)}</h1>
-            <p>
-              {t(
-                !game
-                  ? "A handful of shells. Four little pawns. Endless reasons to play again."
-                  : game.phase === "lobby"
-                    ? "Pull up a chair. Invite your people. The courtyard is yours."
-                    : game.phase === "finished"
-                      ? "A little luck, a little strategy. Ready for another round?"
-                      : `${game.size} × ${game.size} ${game.size === 5 ? "Classic" : "Grand"} · ${"Capture to enter"} · ${game.mode === "online" ? "Online table" : game.mode === "solo" ? "Practice with the computer" : "Pass & play"}`,
-              )}
-            </p>
-            {compact && screen === "home" && !game && (
+          {compact && screen === "home" && !game ? (
+            <div className="title-screen">
+              <span className="brand-symbol title-mark">
+                <i />
+                <i />
+                <i />
+                <i />
+              </span>
+              <h1>
+                {t("chowka bara")}
+                <span className="brand-period">.</span>
+              </h1>
+              <small>{t("THE INDIAN GAME TABLE")}</small>
               <div className="home-actions">
                 <button
                   className="primary-button home-cta"
                   onClick={() => setScreen("setup")}
                 >
                   <span>{t("Play")}</span>
-                  <ArrowRight size={17} />
+                  <ArrowRight size={18} />
                 </button>
                 <button
                   className="subtle-button home-rules"
@@ -1053,8 +1059,27 @@ function GameScreen() {
                 </button>
                 {resumeBlock}
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div>
+              <div className="eyebrow">
+                <span className="tiny-star">✳</span>{" "}
+                {t("A CLASSIC, BACK AT THE TABLE ")}
+              </div>
+              <h1>{t(title)}</h1>
+              <p>
+                {t(
+                  !game
+                    ? "A handful of shells. Four little pawns. Endless reasons to play again."
+                    : game.phase === "lobby"
+                      ? "Pull up a chair. Invite your people. The courtyard is yours."
+                      : game.phase === "finished"
+                        ? "A little luck, a little strategy. Ready for another round?"
+                        : `${game.size} × ${game.size} ${game.size === 5 ? "Classic" : "Grand"} · ${"Capture to enter"} · ${game.mode === "online" ? "Online table" : game.mode === "solo" ? "Practice with the computer" : "Pass & play"}`,
+                )}
+              </p>
+            </div>
+          )}
           <div className="heritage-stamp">
             <Flower size={24} strokeWidth={1} />
             <span>
@@ -1820,6 +1845,9 @@ function GameScreen() {
                       setGame(null);
                       setModal(null);
                       setResume(game);
+                      // Leaving a local game returns to the main page, with
+                      // the game kept for another day.
+                      setScreen("home");
                     } else void leave();
                   }}
                 >

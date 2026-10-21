@@ -4544,22 +4544,81 @@ html[data-theme="dark"] .throw-button.primary-button {
     flex-shrink: 0;
     padding-bottom: max(27px, var(--inset-bottom));
   }
-  .app-shell[data-screen="home"] .game-layout {
+  /* The welcome screen is a title screen: the mark, the name, the table you
+     are about to play on, and a way in. */
+  /* The title screen carries the name, so the header keeps only the mark. */
+  .app-shell[data-screen="home"] .site-header .brand > span:last-child {
     display: none;
   }
   .app-shell[data-screen="home"] .page-heading {
-    flex: 1;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    padding: 10px 0 18px;
+    align-items: center;
+    text-align: center;
+    padding: 12px 0 4px;
   }
-  .app-shell[data-screen="home"] .page-heading h1 {
-    font-size: 38px;
-    max-width: 340px;
+  .app-shell[data-screen="home"] .heritage-stamp {
+    display: none;
   }
   .app-shell[data-screen="home"] .how-strip {
-    margin-top: auto;
+    display: none;
+  }
+  .title-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .title-mark {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 12px;
+  }
+  .title-screen h1 {
+    font: 400 40px/1.05 var(--serif);
+    letter-spacing: -1.2px;
+    margin: 0;
+  }
+  .title-screen small {
+    font-size: 9.5px;
+    letter-spacing: 2.2px;
+    color: var(--muted);
+    margin-top: 7px;
+  }
+  .app-shell[data-screen="home"] .home-actions {
+    align-items: center;
+    width: 100%;
+    max-width: 320px;
+    margin-top: 20px;
+  }
+  .app-shell[data-screen="home"] .home-cta {
+    width: 100%;
+  }
+  .app-shell[data-screen="home"] .game-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+  }
+  .app-shell[data-screen="home"] .game-panel {
+    display: none;
+  }
+  .app-shell[data-screen="home"] .table-section {
+    border-radius: 0;
+  }
+  .app-shell[data-screen="home"] .board-surround {
+    max-width: 284px;
+    padding: 24px 24px 26px;
+  }
+  .app-shell[data-screen="home"] .table-toolbar {
+    font-size: 9px;
+  }
+  /* The table on the title screen is a picture of the game, so it carries
+     neither the players around it nor the key beneath it. */
+  .app-shell[data-screen="home"] .seat,
+  .app-shell[data-screen="home"] .board-key,
+  .app-shell[data-screen="home"] .table-bottom {
+    display: none;
   }
   .app-shell[data-screen="setup"] .page-heading,
   .app-shell[data-screen="setup"] .table-section,
@@ -5012,9 +5071,25 @@ html[data-theme="dark"] .throw-button.primary-button {
     padding-top: max(7px, var(--inset-top));
     gap: 10px;
   }
+  .is-focused .focus-topbar .icon-button {
+    width: 44px;
+    height: 44px;
+  }
   .is-focused .focus-topbar:has(.immersive-button) .icon-button {
     width: 40px;
     height: 40px;
+  }
+  /* Leaving the game is the one way out, so it reads as a real action. */
+  .is-focused .focus-topbar .exit-button {
+    width: 50px;
+    height: 50px;
+    border-color: #d9b7a8;
+    background: #fbf0e9;
+    color: #8e3826;
+  }
+  .is-focused .focus-topbar .exit-button svg {
+    width: 22px;
+    height: 22px;
   }
   .is-focused .game-layout {
     margin: 4px 8px 0;

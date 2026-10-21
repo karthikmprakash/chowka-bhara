@@ -39,16 +39,18 @@ The rules tests cover scoring, safe houses, captures, exact home, capture gates,
 A narrow screen never becomes one long page. The app moves screen by screen, and
 each screen holds its own content:
 
-1. **Welcome** - the promise, a Play button, and the three steps.
+1. **Welcome** - the mark, the name, the table you are about to play on, and a
+   way in.
 2. **Set the table** - the game, the board, the number of players, and the house rules.
 3. **Take your seat** - a portrait, a name, and how much help you want.
 4. **Your table is open** - the room code and the seats, while you wait.
 5. **The game** - the board fills the screen and the system bars step aside.
 
 The hardware back button walks back through those screens, closes an open
-dialog first, and leaves the app only from the welcome screen. The wide layout
-keeps the original one long page with the board and the set up panel side by
-side.
+dialog first, and leaves the app only from the welcome screen. Leaving a game
+returns to the welcome screen as well, with the game kept for another day. The
+wide layout keeps the original one long page with the board and the set up
+panel side by side.
 
 ## The type on a phone
 
