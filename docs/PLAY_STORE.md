@@ -152,13 +152,13 @@ Three ways to sit at the table:
 
 Choose the compact 5×5 classic or the expansive 7×7 grand board. Play the friendly ruleset or require a capture before entering the center. Turn on move hints if you are learning, or turn them off for a cleaner game.
 
-The whole game speaks both English and Kannada, with a light and a dark theme.
+A light theme and a calm dark theme, made for late-night tables.
 
 No ads. No sign-up. No in-app purchases. Online rooms keep a display name, an avatar, and the game state for 24 hours, then delete themselves. Local and practice games stay on your phone.
 
 An internet connection is needed to open the game and to play online. Rooms are private: nobody can join without the code.
 
-ಆಡೋಣ ಬನ್ನಿ — come, let's play.
+Come, let's play.
 ```
 
 Do not add "best", "#1", "free download", emoji spam, or keyword lists.
@@ -169,16 +169,15 @@ Do not add "best", "#1", "free download", emoji spam, or keyword lists.
 | --- | --- | --- |
 | App icon | 512 × 512 PNG, 32-bit | `store/play/icon-512.png` |
 | Feature graphic | 1024 × 500 PNG | `store/play/feature-graphic-1024x500.png` |
-| Phone screenshots | 1080 × 1920 PNG, 6 of them | `store/play/screenshots/01-home.png` … `06-kannada.png` |
+| Phone screenshots | 1080 × 1920 PNG, 5 of them | `store/play/screenshots/01-home.png` … `05-settings.png` |
 
 Screenshot order for the listing:
 
 1. `01-home.png` — the welcome and the three ways to play
 2. `03-board.png` — the 5×5 board in a practice game
 3. `04-throw.png` — a throw resolved, with a legal move highlighted
-4. `06-kannada.png` — the same table in Kannada
-5. `02-how-to-play.png` — the rules guide
-6. `05-settings.png` — avatars and the beginner/advanced choice
+4. `02-how-to-play.png` — the rules guide
+5. `05-settings.png` — avatars and the beginner/advanced choice
 
 Regenerate them at any time:
 

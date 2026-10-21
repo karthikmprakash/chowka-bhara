@@ -225,12 +225,6 @@ async function main() {
       await sleep(500);
     });
 
-    await step("kannada", async () => {
-      await page.evaluate(`document.querySelector('[aria-label*="ಕನ್ನಡ"], [aria-label*="Switch language"]')?.click()`);
-      await sleep(700);
-      await page.shot("06-kannada.png");
-    });
-
     await page.close();
   } finally {
     chrome.kill("SIGTERM");
