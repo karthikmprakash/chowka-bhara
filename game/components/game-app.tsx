@@ -238,6 +238,14 @@ function GameScreen() {
       (game?.mode !== "online" ? game?.players[0]?.id : null) ||
       null,
   );
+  // Each player looks at the table from their own side. Online and practice
+  // keep one player's side at the bottom; pass and play turns with the phone.
+  const viewerColor = game
+    ? game.mode === "local"
+      ? (game.players[game.turn]?.color ?? 0)
+      : (game.players[me]?.color ?? 0)
+    : 0;
+
   const myTurn =
     !!game &&
     game.phase === "playing" &&
@@ -760,6 +768,11 @@ function GameScreen() {
         <span>{t("Make a capture to enter the inner ring.")}</span>
         <span>
           {t(
+            "If no opponent is left on the outer ring, the gate opens anyway.",
+          )}
+        </span>
+        <span>
+          {t(
             "Own pawns may share X-marked safe houses. Other houses hold one pawn per player.",
           )}
         </span>
@@ -1198,6 +1211,7 @@ function GameScreen() {
               <Board
                 game={boardGame}
                 travel={travel}
+                viewerColor={viewerColor}
                 canPlay={playable}
                 preview={!game || game.phase === "lobby"}
                 showPath={showPath && !advanced}

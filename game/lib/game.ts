@@ -170,6 +170,26 @@ export function newGame(
     lastAction: "Welcome to the table",
   };
 }
+/**
+ * Whether a player may enter the inner ring.
+ *
+ * The house rule is that every player must capture once before entering. That
+ * cannot be the only way in: once the rivals have every pawn inside the inner
+ * ring or home, there is nothing left to capture and the gate would stay shut
+ * forever, so the game would be unwinnable for the player outside. When no
+ * rival pawn is left on the outer ring, the gate opens on its own.
+ */
+export function gateOpen(g: Game, player: number): boolean {
+  const p = g.players[player];
+  if (!p || p.resigned) return true;
+  if (p.captures > 0) return true;
+  const gate = 4 * (g.size - 1);
+  return !g.players.some((rival, i) => {
+    if (i === player || rival.resigned) return false;
+    return rival.pawns.some((position) => position < gate);
+  });
+}
+
 export function moveError(g: Game, pawn: number): string | null {
   if (g.phase !== "playing" || g.roll === null)
     return "Throw the cowries before choosing a pawn.";
@@ -182,7 +202,7 @@ export function moveError(g: Game, pawn: number): string | null {
     destination = position + g.roll;
   if (position === end) return "This pawn is already home.";
   if (destination > end) return "You need an exact throw to reach home.";
-  if (p.captures === 0 && destination >= 4 * (g.size - 1))
+  if (!gateOpen(g, g.turn) && destination >= 4 * (g.size - 1))
     return "Capture an opponent before entering the inner circle.";
   // Compare physical cells, not path indices: the 7-house route revisits its inner entry.
   const point = path[destination];

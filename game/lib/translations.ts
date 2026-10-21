@@ -151,6 +151,8 @@ export const kannada: Record<string, string> = {
   "Friendly race": "ಸುಲಭ ಆಟ",
   "Make a capture to enter the inner ring.":
     "ಒಳಸುತ್ತಿಗೆ ಹೋಗಲು ಎದುರಾಳಿಯ ಕಾಯಿ ಹೊಡೆಯಿರಿ.",
+  "If no opponent is left on the outer ring, the gate opens anyway.":
+    "ಹೊರಸುತ್ತಿನಲ್ಲಿ ಎದುರಾಳಿಯ ಕಾಯಿ ಉಳಿಯದಿದ್ದರೆ ಬಾಗಿಲು ತೆರೆದಿರುತ್ತದೆ.",
   "A relaxed race. Perfect for a first game.": "ಹೊಸಬರಿಗೆ ಸುಲಭವಾದ ಆಟ.",
   "Opening your table…": "ಕೋಣೆ ತೆರೆಯುತ್ತಿದೆ…",
   "Create a room": "ಕೋಣೆ ರಚಿಸಿ",

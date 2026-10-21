@@ -1,6 +1,6 @@
 "use client";
 import type { CSSProperties } from "react";
-import { playerPath, COLORS, type Game, type Point } from "@/lib/game";
+import { playerPath, gateOpen, COLORS, type Game, type Point } from "@/lib/game";
 import { usePreferences } from "./preferences";
 const points = (path: Point[]) =>
   path.map(([r, c]) => `${c * 100 + 50},${r * 100 + 50}`).join(" ");
@@ -8,11 +8,18 @@ const motionPath = (path: Point[]) =>
   path
     .map(([r, c], i) => `${i ? "L" : "M"} ${c * 100 + 50} ${r * 100 + 50}`)
     .join(" ");
-export function RouteGuide({ game: g }: { game: Game }) {
+export function RouteGuide({
+  game: g,
+  rotate = 0,
+}: {
+  game: Game;
+  /** Degrees to turn the whole route with the board. */
+  rotate?: number;
+}) {
   const p = g.players[g.turn],
     path = playerPath(g.size, p.color),
     boundary = 4 * (g.size - 1),
-    unlocked = p.captures > 0;
+    unlocked = gateOpen(g, g.turn);
   const outer = path.slice(0, boundary),
     inner = path.slice(boundary - 1),
     active = unlocked ? path : outer;
@@ -22,7 +29,12 @@ export function RouteGuide({ game: g }: { game: Game }) {
       className={`route-map ${unlocked ? "is-unlocked" : "is-locked"}`}
       viewBox={`0 0 ${g.size * 100} ${g.size * 100}`}
       aria-hidden="true"
-      style={{ "--route-color": COLORS[p.color] } as CSSProperties}
+      style={
+        {
+          "--route-color": COLORS[p.color],
+          transform: rotate ? `rotate(${rotate}deg)` : undefined,
+        } as CSSProperties
+      }
     >
       <defs>
         <marker

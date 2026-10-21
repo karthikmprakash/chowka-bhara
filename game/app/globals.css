@@ -4466,12 +4466,39 @@ html[data-theme="dark"] .throw-button.primary-button {
   padding: 0 3px;
   z-index: 3;
 }
-.route-gate {
+/* The gate into the inner circle, shown on the square that blocks it. */
+.gate-lock {
   position: absolute;
-  top: 6px;
-  left: 6px;
-  color: var(--muted);
-  z-index: 3;
+  top: 3px;
+  right: 3px;
+  z-index: 4;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  pointer-events: none;
+}
+.gate-lock.is-locked {
+  color: #8e3826;
+  background: #f6e3da;
+  border-color: #e6c4b4;
+}
+.gate-lock.is-open {
+  color: #2e5143;
+  background: #e2ecdb;
+  border-color: #c3d4b7;
+}
+html[data-theme="dark"] .gate-lock.is-locked {
+  color: #f0b7a3;
+  background: #3a2019;
+  border-color: #6b3a2a;
+}
+html[data-theme="dark"] .gate-lock.is-open {
+  color: #cfe2bd;
+  background: #22321f;
+  border-color: #4a5f3c;
 }
 .route-explanation {
   display: flex;
@@ -4656,10 +4683,19 @@ html[data-theme="dark"] .throw-button.primary-button {
     display: flex;
     flex-direction: column;
   }
-  /* The action sits at the foot of the panel, where a thumb expects it. */
+  /* The action sits at the foot of the panel, where a thumb expects it, and
+     stays there while a long set up scrolls underneath. The extra room below
+     the content lets the last card scroll clear of it. */
+  .app-shell[data-screen="setup"] .game-panel,
+  .app-shell[data-screen="seat"] .game-panel {
+    padding-bottom: 78px;
+  }
   .app-shell[data-screen="setup"] .game-panel > .primary-button,
   .app-shell[data-screen="seat"] .game-panel > .primary-button {
     margin-top: auto;
+    position: sticky;
+    bottom: 12px;
+    box-shadow: 0 -14px 18px -14px #24392b33;
   }
   .app-shell[data-screen="setup"] .site-header nav,
   .app-shell[data-screen="seat"] .site-header nav {

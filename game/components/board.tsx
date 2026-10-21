@@ -2,13 +2,14 @@
 import { memo, useState, type CSSProperties } from "react";
 import { RouteGuide } from "./route-guide";
 import type { PawnTravel } from "@/lib/presentation";
-import { LockKeyhole } from "lucide-react";
+import { LockKeyhole, LockKeyholeOpen } from "lucide-react";
 import { Avatar, portraitOf } from "./avatar";
 import { usePreferences } from "./preferences";
 import { Flower, Flag, Route } from "lucide-react";
 import {
   COLORS,
   COLOR_NAMES,
+  gateOpen,
   isSafe,
   legalMoves,
   playerPath,
@@ -24,6 +25,8 @@ interface Props {
   onMove: (pawn: number) => void;
   throwOverlay?: React.ReactNode;
   travel?: PawnTravel | null;
+  /** Whose side of the board sits at the bottom. Defaults to the player to move. */
+  viewerColor?: number;
 }
 export const Board = memo(function Board({
   game: g,
@@ -33,6 +36,7 @@ export const Board = memo(function Board({
   onMove,
   throwOverlay,
   travel,
+  viewerColor,
 }: Props) {
   const { t, advanced } = usePreferences();
   const [hover, setHover] = useState<number | null>(null);
@@ -41,6 +45,16 @@ export const Board = memo(function Board({
     moves = legalMoves(g),
     center = Math.floor(n / 2);
   const path = playerPath(n, current.color);
+  // The board turns so the viewer's own home is always at the bottom of the
+  // screen. A quarter turn counter clockwise per seat, in physical cells.
+  const turns = (((viewerColor ?? current.color) % 4) + 4) % 4;
+  const rotate = ([r, c]: Point): Point => {
+    let point: Point = [r, c];
+    for (let i = 0; i < turns; i++) point = [n - 1 - point[1], point[0]];
+    return point;
+  };
+  const gate = 4 * (n - 1);
+  const gateIsOpen = gateOpen(g, g.turn);
   const stacks = new Map<
     string,
     { player: number; pawn: number; point: Point; home: boolean }[]
@@ -77,7 +91,7 @@ export const Board = memo(function Board({
       >
         {g.players.map((p, i) => (
           <div
-            className={`seat seat-${p.color} ${!preview && g.turn === i && g.phase === "playing" ? "seat-active" : ""} ${p.resigned ? "seat-out" : ""}`}
+            className={`seat seat-${(((p.color - turns) % 4) + 4) % 4} ${!preview && g.turn === i && g.phase === "playing" ? "seat-active" : ""} ${p.resigned ? "seat-out" : ""}`}
             key={p.id}
             style={{ "--player": COLORS[p.color] } as CSSProperties}
           >
@@ -132,15 +146,18 @@ export const Board = memo(function Board({
                       : r === center && c === n - 1
                         ? 3
                         : null;
-              const step = path.findIndex((p) => p[0] === r && p[1] === c);
+              const step = path.findIndex((p) => p[0] === r && p[1] === c),
+                [dr, dc] = rotate([r, c]);
               return (
                 <div
                   key={i}
                   className={`cell ${safe ? "safe" : ""} ${home ? "home-cell" : ""} ${destinations.includes(key) ? "destination" : ""} ${target === key ? "target" : ""}`}
                   style={
-                    start !== null
-                      ? ({ "--start": COLORS[start] } as CSSProperties)
-                      : undefined
+                    {
+                      gridRow: dr + 1,
+                      gridColumn: dc + 1,
+                      ...(start !== null ? { "--start": COLORS[start] } : {}),
+                    } as CSSProperties
                   }
                 >
                   {safe && !home && (
@@ -154,20 +171,26 @@ export const Board = memo(function Board({
                     />
                   )}
                   {start !== null && <span className="start-mark" />}
-                  {showPath &&
-                    !advanced &&
-                    !current.captures &&
-                    step === 4 * (n - 1) && (
-                      <LockKeyhole
-                        className="route-gate"
-                        size={15}
-                        aria-label={t("Capture to unlock")}
-                      />
-                    )}
+                  {!preview && g.phase === "playing" && step === gate && (
+                    <span
+                      className={`gate-lock ${gateIsOpen ? "is-open" : "is-locked"}`}
+                      aria-label={t(
+                        gateIsOpen ? "Inner circle is open" : "Capture to unlock",
+                      )}
+                    >
+                      {gateIsOpen ? (
+                        <LockKeyholeOpen size={12} strokeWidth={2.4} />
+                      ) : (
+                        <LockKeyhole size={12} strokeWidth={2.4} />
+                      )}
+                    </span>
+                  )}
                 </div>
               );
             })}
-            {showPath && !advanced && <RouteGuide game={g} />}
+            {showPath && !advanced && (
+              <RouteGuide game={g} rotate={turns * 90} />
+            )}
             {Array.from(stacks.entries()).flatMap(([, tokens]) =>
               tokens.map((token, stack) => {
                 const p = g.players[token.player],
@@ -208,10 +231,10 @@ export const Board = memo(function Board({
                     style={
                       {
                         "--player": COLORS[p.color],
-                        "--col": token.point[1] + 0.5,
-                        "--row": token.point[0] + 0.5,
-                        left: `${((token.point[1] + 0.5) / n) * 100}%`,
-                        top: `${((token.point[0] + 0.5) / n) * 100}%`,
+                        "--col": rotate(token.point)[1] + 0.5,
+                        "--row": rotate(token.point)[0] + 0.5,
+                        left: `${((rotate(token.point)[1] + 0.5) / n) * 100}%`,
+                        top: `${((rotate(token.point)[0] + 0.5) / n) * 100}%`,
                         "--dx": `calc(${dx} * 100cqw / var(--n))`,
                         "--dy": `calc(${dy} * 100cqw / var(--n))`,
                         "--pawn-size":

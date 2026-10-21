@@ -12,6 +12,7 @@ import {
   isSafe,
   resignGame,
   chooseBotMove,
+  gateOpen,
   type Game,
 } from "../lib/game.ts";
 for (const size of [5, 7] as const) {
@@ -86,6 +87,24 @@ for (const size of [5, 7] as const) {
     assert.ok(!legalMoves(g).includes(0));
     g.players[0].captures = 1;
     assert.ok(legalMoves(g).includes(0));
+  });
+  test(`${size}×${size}: the gate opens when nothing is left to capture`, () => {
+    const g = newGame(size, "local", 2, true),
+      gate = 4 * (size - 1);
+    // Every rival pawn is past the gate, so the player outside has no target
+    // and must not be locked out of the game.
+    g.players[1].pawns = [gate, gate, gate, gate];
+    g.players[0].pawns[0] = gate - 1;
+    g.roll = 1;
+    assert.equal(gateOpen(g, 0), true);
+    assert.ok(legalMoves(g).includes(0));
+    // One rival pawn back on the outer ring shuts it again.
+    g.players[1].pawns[0] = gate - 1;
+    assert.equal(gateOpen(g, 0), false);
+    assert.ok(!legalMoves(g).includes(0));
+    // A capture opens it for good.
+    g.players[0].captures = 1;
+    assert.equal(gateOpen(g, 0), true);
   });
   test(`${size}×${size}: safe houses protect rivals`, () => {
     const g = newGame(size, "local", 2),
