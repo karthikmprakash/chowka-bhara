@@ -266,6 +266,7 @@ export const kannada: Record<string, string> = {
   "Local and practice games stay on your device. Online rooms store names and game state and expire after 24 hours. No account is required by the game; hosting access rules may still apply.":
     "ಸ್ಥಳೀಯ ಮತ್ತು ಅಭ್ಯಾಸದ ಆಟಗಳು ನಿಮ್ಮ ಸಾಧನದಲ್ಲೇ ಉಳಿಯುತ್ತವೆ. ಆನ್‌ಲೈನ್ ಕೋಣೆಗಳಲ್ಲಿ ಹೆಸರು ಮತ್ತು ಆಟದ ಸ್ಥಿತಿ ಉಳಿಯುತ್ತದೆ; ಕೋಣೆ 24 ಗಂಟೆಗಳ ನಂತರ ಮುಗಿಯುತ್ತದೆ. ಆಡಲು ಖಾತೆ ಬೇಕಿಲ್ಲ.",
   "CHOWKA BARA · THE GAME TABLE": "ಚೌಕ ಬಾರ · ಆಟದ ಮಣೆ",
+  "Read the privacy policy": "ಗೌಪ್ಯತಾ ನೀತಿಯನ್ನು ಓದಿ",
   "Close dialog": "ಮುಚ್ಚಿ",
   "2–4 players. Four pawns each. Race around the board and spiral into the center.":
     "2–4 ಆಟಗಾರರು. ಪ್ರತಿಯೊಬ್ಬರಿಗೂ ನಾಲ್ಕು ಕಾಯಿಗಳು. ಮಣೆಯ ಸುತ್ತ ಸಾಗಿ, ಒಳಸುತ್ತುಗಳ ಮೂಲಕ ಮಧ್ಯದ ಮನೆ ತಲುಪಿ.",
