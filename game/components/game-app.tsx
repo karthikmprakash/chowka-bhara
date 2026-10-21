@@ -60,6 +60,7 @@ import { Board } from "./board";
 import { Cowries } from "./cowries";
 import { usePlayView } from "./use-play-view";
 import { useIsCompact } from "@/hooks/use-mobile";
+import { useRoomSocket, type RoomSnapshot } from "@/lib/use-room-socket";
 import type { ThrowingPlayer } from "@/lib/presentation";
 import Link from "next/link";
 import { isNativeApp, setKeepAwake, shareInvite } from "@/lib/native";
@@ -136,11 +137,29 @@ function GameScreen() {
     [notice, setNotice] = useState(""),
     [sound, setSound] = useState(false),
     [showPath, setShowPath] = useState(false),
-    [connected, setConnected] = useState(true),
     [copied, setCopied] = useState(false),
     [resume, setResume] = useState<Game | null>(null),
     [hydrated, setHydrated] = useState(false);
   const rolling = throwing !== null;
+  const loadRoom = useCallback((snapshot: RoomSnapshot) => {
+    setGame((old) =>
+      !old || snapshot.game.revision >= old.revision ? snapshot.game : old,
+    );
+    setBusy(false);
+  }, []);
+  const dropRoom = useCallback((message: string) => {
+    setError(message);
+    setSession(null);
+    setGame(null);
+    setBusy(false);
+    localStorage.removeItem(ROOM_KEY);
+  }, []);
+  const room = useRoomSocket({
+    code: session?.code ?? null,
+    token: session?.token ?? null,
+    onState: loadRoom,
+    onFatal: dropRoom,
+  });
   // On a phone the app is a series of single screens: welcome, set the
   // table, take your seat, the table, and the game. The wide layout keeps
   // its one long page.
@@ -207,6 +226,8 @@ function GameScreen() {
     session && game
       ? game.players.findIndex((p) => p.id === session.playerId)
       : 0;
+  // A table without a socket is either local play or still connecting.
+  const connected = !session || room.status === "open";
   const { journey, earned } = useJourney(
     pawnMoving ? null : visualGame,
     session?.playerId ||
@@ -285,23 +306,9 @@ function GameScreen() {
       if (s) {
         const v = JSON.parse(s);
         if (v.code && v.token && v.playerId && (!query || query === v.code)) {
-          setSession(v);
+          // The seat token opens the socket; the table arrives on it.
           setBusy(true);
-          fetch(`/api/rooms/${v.code}`, {
-            headers: { Authorization: `Bearer ${v.token}` },
-          })
-            .then(async (r) => {
-              const data = (await r.json()) as RoomResponse;
-              if (!r.ok) throw new Error(data.error);
-              setGame(data.game);
-              setConnected(true);
-            })
-            .catch((e) => {
-              setError(e.message);
-              setSession(null);
-              localStorage.removeItem(ROOM_KEY);
-            })
-            .finally(() => setBusy(false));
+          setSession(v);
         }
       }
       if (query) {
@@ -329,78 +336,16 @@ function GameScreen() {
     const timer = setTimeout(() => setNotice(""), 3500);
     return () => clearTimeout(timer);
   }, [notice]);
-  // Poll a single room in sequence; revision checks prevent stale reads overwriting a move.
-  useEffect(() => {
-    if (!session) return;
-    let disposed = false;
-    let timer: ReturnType<typeof setTimeout>;
-    const poll = async () => {
-      if (!disposed && !inFlight.current) {
-        try {
-          const r = await fetch(`/api/rooms/${session.code}`, {
-            headers: { Authorization: `Bearer ${session.token}` },
-          });
-          const data = (await r.json()) as RoomResponse;
-          if (r.status === 401 || r.status === 404) {
-            if (!disposed) {
-              setError(data.error || "Could not connect to the room.");
-              setSession(null);
-              setGame(null);
-              localStorage.removeItem(ROOM_KEY);
-            }
-            return;
-          }
-          if (!r.ok) throw new Error(data.error);
-          if (!disposed) {
-            setConnected(true);
-            setGame((old) =>
-              !old || data.game.revision > old.revision ? data.game : old,
-            );
-          }
-        } catch {
-          if (!disposed) setConnected(false);
-        }
-      }
-      if (!disposed) timer = setTimeout(poll, document.hidden ? 5000 : 1000);
-    };
-    timer = setTimeout(poll, 1000);
-    const wake = () => {
-      if (!document.hidden) {
-        clearTimeout(timer);
-        void poll();
-      }
-    };
-    document.addEventListener("visibilitychange", wake);
-    return () => {
-      disposed = true;
-      clearTimeout(timer);
-      document.removeEventListener("visibilitychange", wake);
-    };
-  }, [session]);
+  // Live tables stream over the room socket; local play never opens one.
   const onlineAction = useCallback(
     async (action: string, extra: Record<string, unknown> = {}) => {
-      const s = sessionRef.current,
-        g = gameRef.current;
-      if (!s || !g || inFlight.current) return;
+      const s = sessionRef.current;
+      if (!s || inFlight.current) return false;
       inFlight.current = true;
       setBusy(true);
       setError("");
       try {
-        const r = await fetch(`/api/rooms/${s.code}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${s.token}`,
-          },
-          body: JSON.stringify({ action, revision: g.revision, ...extra }),
-        });
-        const data = (await r.json()) as RoomResponse;
-        if (data.game)
-          setGame((old) =>
-            !old || data.game.revision >= old.revision ? data.game : old,
-          );
-        if (!r.ok) throw new Error(data.error);
-        setConnected(true);
+        await room.send({ t: action, ...extra });
         return true;
       } catch (e) {
         setError(
@@ -412,7 +357,7 @@ function GameScreen() {
         setBusy(false);
       }
     },
-    [],
+    [room.send],
   );
   const roll = useCallback(
     async (instant = false) => {
@@ -530,7 +475,6 @@ function GameScreen() {
       localStorage.setItem(ROOM_KEY, JSON.stringify(s));
       setSession(s);
       setGame(data.game);
-      setConnected(true);
       history.replaceState(null, "", `?room=${data.code}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create a room.");
@@ -545,10 +489,10 @@ function GameScreen() {
     setBusy(true);
     try {
       const code = roomCode.trim().toUpperCase();
-      const r = await fetch(`/api/rooms/${code}`, {
+      const r = await fetch(`/api/rooms/${code}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "join", name: name.trim(), avatar }),
+        body: JSON.stringify({ name: name.trim(), avatar }),
       });
       const data = (await r.json()) as RoomResponse;
       if (!r.ok) throw new Error(data.error);

@@ -66,8 +66,6 @@ jobs:
           cache-dependency-path: game/package-lock.json
       - name: Install
         run: npm ci
-      - name: Create the local D1 schema
-        run: npm run db:migrate
       - name: Start the dev server
         run: |
           npm run dev > "$RUNNER_TEMP/dev.log" 2>&1 &
