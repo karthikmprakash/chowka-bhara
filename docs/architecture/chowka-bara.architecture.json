@@ -1,0 +1,466 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Chowka Bara — runtime and release topology",
+    "output": "docs/architecture/chowka-bara.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/karthikmprakash/chowka-bhara",
+      "provider": "github",
+      "revision": "4925c994cdffac17f9bd5ae949d75f1a2f2dc774"
+    }
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Web browser",
+      "sublabel": "Desktop & phone · Next.js UI",
+      "pos": [
+        40,
+        140
+      ],
+      "size": [
+        172,
+        66
+      ],
+      "sources": [
+        {
+          "path": "game/app/page.tsx"
+        }
+      ]
+    },
+    {
+      "id": "localstore",
+      "type": "database",
+      "label": "Browser storage",
+      "sublabel": "saved game · seat · prefs",
+      "pos": [
+        40,
+        242
+      ],
+      "size": [
+        172,
+        52
+      ],
+      "sources": [
+        {
+          "path": "game/components/game-app.tsx"
+        }
+      ]
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "Chowka Bara app",
+      "sublabel": "com.chowkabara.game",
+      "pos": [
+        60,
+        362
+      ],
+      "size": [
+        152,
+        60
+      ],
+      "sources": [
+        {
+          "path": "android/app/src/main/AndroidManifest.xml"
+        }
+      ]
+    },
+    {
+      "id": "webview",
+      "type": "frontend",
+      "label": "WebView",
+      "sublabel": "loads the Worker URL",
+      "pos": [
+        252,
+        350
+      ],
+      "size": [
+        176,
+        56
+      ],
+      "sources": [
+        {
+          "path": "capacitor.config.json"
+        }
+      ]
+    },
+    {
+      "id": "native",
+      "type": "frontend",
+      "label": "Native bridge",
+      "sublabel": "insets · haptics · share",
+      "pos": [
+        252,
+        432
+      ],
+      "size": [
+        176,
+        56
+      ],
+      "sources": [
+        {
+          "path": "android/app/src/main/java/com/chowkabara/game/NativeShellPlugin.java"
+        }
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "cloud",
+      "label": "Cloudflare Worker",
+      "sublabel": "vinext · RSC + static assets",
+      "pos": [
+        520,
+        140
+      ],
+      "size": [
+        224,
+        70
+      ],
+      "sources": [
+        {
+          "path": "game/worker/index.ts"
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Room API",
+      "sublabel": "/api/rooms · create · join · act",
+      "pos": [
+        520,
+        255
+      ],
+      "size": [
+        224,
+        64
+      ],
+      "sources": [
+        {
+          "path": "game/lib/rooms.ts"
+        }
+      ]
+    },
+    {
+      "id": "room",
+      "type": "backend",
+      "label": "Room Durable Object",
+      "sublabel": "seats · throws · sockets",
+      "pos": [
+        790,
+        255
+      ],
+      "size": [
+        190,
+        64
+      ],
+      "sources": [
+        {
+          "path": "game/lib/room-object.ts"
+        }
+      ]
+    },
+    {
+      "id": "engine",
+      "type": "backend",
+      "label": "Game engine",
+      "sublabel": "rules · moves · gate",
+      "pos": [
+        520,
+        358
+      ],
+      "size": [
+        224,
+        64
+      ],
+      "sources": [
+        {
+          "path": "game/lib/game.ts"
+        }
+      ]
+    },
+    {
+      "id": "presentation",
+      "type": "backend",
+      "label": "Presentation & copy",
+      "sublabel": "log text · English + ಕನ್ನಡ",
+      "pos": [
+        790,
+        358
+      ],
+      "size": [
+        190,
+        64
+      ],
+      "sources": [
+        {
+          "path": "game/lib/presentation.ts"
+        },
+        {
+          "path": "game/lib/translations.ts"
+        }
+      ]
+    },
+    {
+      "id": "repo",
+      "type": "external",
+      "label": "GitHub repository",
+      "sublabel": "protected main · pull requests",
+      "pos": [
+        1020,
+        42
+      ],
+      "size": [
+        200,
+        58
+      ],
+      "sources": [
+        {
+          "path": ".github/workflows/ci.yml"
+        }
+      ]
+    },
+    {
+      "id": "actions",
+      "type": "cloud",
+      "label": "GitHub Actions",
+      "sublabel": "CI · deploy · release",
+      "pos": [
+        1020,
+        144
+      ],
+      "size": [
+        200,
+        62
+      ],
+      "sources": [
+        {
+          "path": ".github/workflows/release.yml"
+        }
+      ]
+    },
+    {
+      "id": "play",
+      "type": "external",
+      "label": "Google Play Console",
+      "sublabel": "internal track → production",
+      "pos": [
+        1020,
+        300
+      ],
+      "size": [
+        200,
+        62
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Android · Capacitor 8",
+      "wraps": [
+        "app",
+        "webview",
+        "native"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Cloudflare · chowka-bara",
+      "wraps": [
+        "worker",
+        "api",
+        "room",
+        "engine",
+        "presentation"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "GitHub",
+      "wraps": [
+        "repo",
+        "actions"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "browser-worker",
+      "from": "browser",
+      "to": "worker",
+      "label": "HTTPS · RSC + assets",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "browser-storage",
+      "from": "browser",
+      "to": "localstore",
+      "label": "saved game · seat · prefs",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "app-webview",
+      "from": "app",
+      "to": "webview",
+      "label": "hosts",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "webview-worker",
+      "from": "webview",
+      "to": "worker",
+      "label": "loads the game",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "webview-native",
+      "from": "webview",
+      "to": "native",
+      "label": "bridge",
+      "labelDy": 24,
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "worker-api",
+      "from": "worker",
+      "to": "api",
+      "label": "routes",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "api-room",
+      "from": "api",
+      "to": "room",
+      "label": "seats",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "api-engine",
+      "from": "room",
+      "to": "engine",
+      "label": "moves · throws",
+      "fromSide": "left",
+      "toSide": "top"
+    },
+    {
+      "id": "engine-presentation",
+      "from": "engine",
+      "to": "presentation",
+      "label": "logs",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "repo-actions",
+      "from": "repo",
+      "to": "actions",
+      "label": "push · pull request",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "actions-worker",
+      "from": "actions",
+      "to": "worker",
+      "label": "deploy web",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          1260,
+          175
+        ],
+        [
+          1260,
+          20
+        ],
+        [
+          632,
+          20
+        ]
+      ]
+    },
+    {
+      "id": "actions-play",
+      "from": "actions",
+      "to": "play",
+      "label": "signed AAB · internal draft",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "worker-room",
+      "from": "worker",
+      "to": "room",
+      "label": "socket",
+      "fromSide": "right",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Runtime",
+      "items": [
+        "One Worker serves the rendered page, static assets and the room API",
+        "Every live table is a Durable Object keyed by its six-character code",
+        "The object generates throws, applies the engine and pushes state over WebSockets",
+        "No database: a table is deleted fifteen minutes after the last seat leaves"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Web client",
+      "items": [
+        "Board, cowrie tray, match HUD and journey guide are client components",
+        "Local play, saved games and preferences live in localStorage",
+        "Online play holds one socket per seat and reconnects automatically",
+        "Phone layout is five screens; desktop keeps the single page"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Phone shell",
+      "items": [
+        "Capacitor WebView loads the deployed Worker over HTTPS",
+        "NativeShellPlugin supplies safe-area insets, keep-awake and immersive mode",
+        "Haptics on throw and landing; native share sheet for room codes"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Release pipeline",
+      "items": [
+        "Pull request → CI: typecheck, lint, tests, build",
+        "Merge to main deploys the Worker; vX.Y.Z tag builds a signed AAB + APK",
+        "Play upload lands as an internal-track draft for a human to promote",
+        "Secrets: Android keystore, Play service account, Cloudflare API token"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Local development",
+      "items": [
+        "vinext dev + the room object run inside one Miniflare instance on :5173",
+        "Debug APK targets localhost through adb reverse (-PlocalServerUrl)"
+      ]
+    }
+  ]
+}

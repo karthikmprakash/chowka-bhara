@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "3f2305b5-2c68-4e8d-a95f-9e08270e12b5",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/karthikmprakash/Documents/Personal/Projects/chowka-bhara/.archify/architecture-chowka-bara-20261021-132817/candidate.json",
+  "output": "/Users/karthikmprakash/Documents/Personal/Projects/chowka-bhara/docs/architecture/chowka-bara.html",
+  "specification": {
+    "sha256": "fbacbb2fa51ded8672056eb485cd3a695450af6a8dc3b788feb9ccc1423c3ea7",
+    "bytes": 9609
+  },
+  "artifact": {
+    "sha256": "dc44da5e5096a10e4d1d522a5c1da2634f5e7c2f2c996674319643b8711701fa",
+    "bytes": 840798
+  }
+}

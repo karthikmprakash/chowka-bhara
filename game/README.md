@@ -9,11 +9,10 @@ Requires Node.js 22.13 or newer.
 ```sh
 npm ci
 npm run build
-npm run db:migrate
 npm run dev
 ```
 
-The migration is a first-time setup step. Do not reapply it to an initialized database. The development server uses http://localhost:5173. Use `npm start` for the production build preview. Both share the local D1 database in `.wrangler/state`.
+The development server uses http://localhost:5173. Use `npm start` for the production build preview. Rooms need no local database; the Durable Object runs inside the dev server's Miniflare instance.
 
 ## Validation
 
@@ -24,7 +23,7 @@ npm run typecheck
 npm run test:rooms
 ```
 
-The rules tests cover scoring, safe houses, captures, exact home, capture gates, bonus throws, resignations, and complete simulated games. The room integration tests exercise authorization, joining, concurrent writes, host controls, gameplay, rematches, and host migration.
+The rules tests cover scoring, safe houses, captures, exact home, capture gates, bonus throws, resignations, and complete simulated games. The room integration tests open real WebSockets and exercise seat authorization, joining, host controls, throw broadcasts, turn rejection, resignations, and rematches.
 
 ## Play
 
@@ -87,27 +86,23 @@ A capture resets every rival pawn at the destination to its home square and earn
 
 - React 19 with TypeScript, Vinext/Vite, and native CSS. Fonts are self-hosted; no remote assets are needed during play.
 - `lib/game.ts`: deterministic immutable game engine shared by local play, bots, server actions, and tests.
-- `lib/rooms.ts`: server-authoritative multiplayer API. Only the server generates online throws using cryptographic randomness. Private seat tokens never appear in public room state.
-- `db/schema.ts` and `drizzle/`: Cloudflare D1 room persistence. Optimistic compare-and-swap revisions reject concurrent or stale actions.
-- `worker/index.ts` and `wrangler.json`: the Worker entrypoint and the shared Cloudflare configuration for the `DB` binding.
+- `lib/room-object.ts`: one Durable Object per room code, the only authority for an online table. It generates throws with cryptographic randomness, applies the engine, and streams the result over hibernatable WebSockets.
+- `lib/rooms.ts`: validates room requests and forwards them to the room object. There is no database.
+- `lib/use-room-socket.ts`: the client connection. It greets the room with its private seat token, applies broadcast state, and retries with a short backoff.
+- `worker/index.ts` and `wrangler.json`: the Worker entrypoint, the socket route, and the shared Cloudflare configuration for the `ROOMS` binding.
 - `components/board.tsx`: a DOM board with memoized paths, accessible numbered pawns, legal targets, and CSS position transitions.
 - `components/game-app.tsx`: setup, lobby, turn controls, AI, reconnect, autosave, rules, and rematches.
-- Room clients synchronize every second while visible and every five seconds in the background. Local play has no network dependency after loading. No WebSocket service is required.
+- Online play is push, not poll: the room broadcasts after every action, and each action is acknowledged to the seat that sent it. Local play has no network dependency after loading.
 
-Hosting is a plain Cloudflare Worker with a D1 database. `wrangler.json` is the single source of truth for the worker name, compatibility flags, and the `DB` binding; `vite.config.ts` reads the same file so local development, migrations, and deployment never drift. The tracked SQL migration provisions the `rooms` table. The app is public; room codes permit joining before the host starts, and each player receives a private seat token. Rooms become inaccessible after expiry. Expiration is not a database deletion policy.
+Hosting is a plain Cloudflare Worker with one Durable Object class. `wrangler.json` is the single source of truth for the worker name, compatibility flags, and the `ROOMS` binding; `vite.config.ts` reads the same file so local development and deployment never drift. The app is public; room codes permit joining before the host starts, and each player receives a private seat token. A room lives in the object's own storage for 24 hours, and is deleted as soon as the last player has been gone for fifteen minutes. There is no D1 database, and nothing outlives the table.
 
 ## Deploy
 
-Create the database once, then publish it with its id:
-
 ```sh
-npx wrangler d1 create chowka-bara
-# copy the printed database_id into wrangler.json
-npm run db:migrate:remote
 npm run deploy
 ```
 
-`npm run deploy` builds the Worker and uploads it with the generated `dist/server/wrangler.json`. Set `database_id` to your own D1 database id before deploying; the placeholder in `wrangler.json` only exists so a local database can be created.
+`npm run deploy` builds the Worker and uploads it with the generated `dist/server/wrangler.json`, including the `Room` class and its SQLite migration. The first deployment creates the namespace; later ones roll the class forward.
 
 ## Design & accessibility
 
