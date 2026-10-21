@@ -1,7 +1,7 @@
 name: CI
 
 # Every pull request and every push to main must pass the same gate:
-# type, lint, test, build, and a real room API round trip on a local D1.
+# type, lint, test, build, and a real room socket round trip.
 
 on:
   pull_request:
@@ -51,7 +51,7 @@ jobs:
           retention-days: 2
 
   rooms:
-    name: Room API · local D1 round trip
+    name: Room API · live socket round trip
     runs-on: ubuntu-latest
     needs: web
     defaults:
@@ -101,7 +101,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
       - uses: gradle/actions/setup-gradle@v4
       - name: Install the shell
         run: npm ci
