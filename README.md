@@ -2,7 +2,7 @@
 
 The complete application is in [`game/`](./game/README.md).
 
-Play: https://chowka-bara-game-table.wintryrose512.chatgpt.site
+Play: https://chowka-bara.karthikmprakash.online
 
 Features: online rooms for 2–4 players, local pass-and-play, computer opponents, 5×5 and 7×7 boards, friendly and capture-to-enter rules, mobile controls, and persistent games.
 

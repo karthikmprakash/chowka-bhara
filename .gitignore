@@ -24,3 +24,6 @@ yarn-error.log*
 
 # Archify scratch (candidate + gate evidence)
 .archify/
+
+# Generated store-art intermediates
+store/play/source/

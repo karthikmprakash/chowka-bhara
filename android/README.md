@@ -40,7 +40,7 @@ a server rendered app and online rooms need the D1 backed API:
 
 ```json
 "server": {
-  "url": "https://chowka-bara.mkarthikprakash-work.workers.dev",
+  "url": "https://chowka-bara.karthikmprakash.online",
   "androidScheme": "https"
 }
 ```

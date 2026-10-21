@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://chowka-bara.mkarthikprakash-work.workers.dev
+      url: https://chowka-bara.karthikmprakash.online
     defaults:
       run:
         working-directory: game

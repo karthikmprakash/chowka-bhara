@@ -66,6 +66,8 @@ an update to the same listing.
    **`com.chowkabara.game`**.
 2. Complete the store listing, content rating, data safety form, and the
    privacy policy link. These are required before any track accepts a bundle.
+   The exact answers, listing copy, and assets are in
+   [`PLAY_STORE.md`](./PLAY_STORE.md).
 3. In **Setup → API access**, link a Google Cloud project, create a service
    account, and grant it *Release manager* (or *Release to testing tracks*).
 4. Download the service account JSON.
