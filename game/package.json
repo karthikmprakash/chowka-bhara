@@ -14,7 +14,7 @@
     "db:migrate": "wrangler d1 execute DB --local --config wrangler.json --file drizzle/0000_careful_shatterstar.sql",
     "db:migrate:remote": "wrangler d1 execute DB --remote --config wrangler.json --file drizzle/0000_careful_shatterstar.sql",
     "deploy": "npm run build && wrangler deploy --config dist/server/wrangler.json",
-    "test": "node --experimental-strip-types --test tests/game.test.ts tests/translations.test.ts tests/presentation.test.ts",
+    "test": "node --experimental-strip-types --test tests/game.test.ts tests/translations.test.ts tests/presentation.test.ts tests/journey.test.ts",
     "test:rooms": "node --test tests/rooms.test.mjs",
     "typecheck": "tsc --noEmit"
   },

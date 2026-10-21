@@ -1,5 +1,46 @@
 export type Language = "en" | "kn";
 export const kannada: Record<string, string> = {
+  "badges earned": "ಪದಕಗಳನ್ನು ಗಳಿಸಿದ್ದೀರಿ",
+  "A winning collection": "ಸಾಧನೆಗಳ ಸಂಗ್ರಹ",
+  "Your courtyard journey": "ನಿಮ್ಮ ಆಟದ ಪಯಣ",
+  "Courtyard newcomer": "ಅಂಗಳದ ಹೊಸ ಆಟಗಾರ",
+  "Shell keeper": "ಕವಡೆಯ ನಿಪುಣ",
+  "Mane master": "ಮನೆಯಾಟದ ಚತುರ",
+  points: "ಅಂಕಗಳು",
+  badges: "ಪದಕಗಳು",
+  "games finished": "ಮುಗಿಸಿದ ಆಟಗಳು",
+  wins: "ಗೆಲುವುಗಳು",
+  "Earned through play. Saved on this device.":
+    "ಆಡಿ ಗಳಿಸಿದ ಸಾಧನೆಗಳು. ಈ ಸಾಧನದಲ್ಲೇ ಉಳಿಯುತ್ತವೆ.",
+  "First gathering": "ಮೊದಲ ಕೂಟ",
+  "Finish your first game.": "ನಿಮ್ಮ ಮೊದಲ ಆಟ ಮುಗಿಸಿ.",
+  "Gate opener": "ಒಳಸುತ್ತಿನ ಕೀಲಿ",
+  "Capture an opponent and open the inner circle.":
+    "ಎದುರಾಳಿಯ ಕಾಯಿ ಹೊಡೆದು ಒಳಸುತ್ತಿನ ದಾರಿ ತೆರೆಯಿರಿ.",
+  Homecoming: "ಕಾಯಿ ಮನೆ ಸೇರಿತು",
+  "Bring a pawn to the centre.": "ಒಂದು ಕಾಯಿಯನ್ನು ಮಧ್ಯದ ಮನೆಗೆ ತಲುಪಿಸಿ.",
+  "Courtyard champion": "ಅಂಗಳದ ಚಾಂಪಿಯನ್",
+  "Win a game with all four pawns home.":
+    "ನಾಲ್ಕೂ ಕಾಯಿಗಳನ್ನು ಮನೆ ಸೇರಿಸಿ ಆಟ ಗೆಲ್ಲಿ.",
+  "Across the courtyard": "ಅಂಗಳದ ಗೆಳೆಯರು",
+  "Finish an online game with friends.": "ಗೆಳೆಯರೊಂದಿಗೆ ಆನ್‌ಲೈನ್ ಆಟ ಮುಗಿಸಿ.",
+  Earned: "ಗಳಿಸಿದ್ದೀರಿ",
+  "New badge earned": "ಹೊಸ ಪದಕ ಗಳಿಸಿದ್ದೀರಿ",
+  "From our courtyards to your screen.":
+    "ನಮ್ಮ ಮನೆಯಂಗಳದ ಆಟ, ಈಗ ನಿಮ್ಮ ಪರದೆಯಲ್ಲಿ.",
+  "Play with friends": "ಗೆಳೆಯರೊಂದಿಗೆ ಆಡಿ",
+  "Practice now": "ಅಭ್ಯಾಸ ಮಾಡಿ",
+  "Change board or game": "ಮಣೆ ಅಥವಾ ಆಟ ಬದಲಿಸಿ",
+  "Inner circle unlocked": "ಒಳಸುತ್ತಿನ ದಾರಿ ತೆರೆದಿದೆ",
+  "All four home.": "ನಾಲ್ಕೂ ಕಾಯಿಗಳು ಮನೆ ಸೇರಿದವು.",
+  "The courtyard is yours.": "ಈ ಅಂಗಳದಲ್ಲಿ ನಿಮ್ಮದೇ ಜಯ.",
+  "A clean capture.": "ಎದುರಾಳಿಯ ಕಾಯಿ ಹೊಡೆದಿರಿ.",
+  "Welcome home.": "ಕಾಯಿ ಮನೆ ಸೇರಿತು.",
+  "Another throw is yours.": "ಮತ್ತೊಮ್ಮೆ ಕವಡೆ ಹಾಕಿ.",
+  "Own pawns may share X-marked safe houses. Other houses hold one pawn per player.":
+    "X ಗುರುತಿನ ಸುರಕ್ಷಿತ ಮನೆಯಲ್ಲಿ ನಿಮ್ಮ ಹಲವು ಕಾಯಿಗಳು ಇರಬಹುದು. ಉಳಿದ ಮನೆಗಳಲ್ಲಿ ಒಬ್ಬರ ಒಂದು ಕಾಯಿ ಮಾತ್ರ.",
+  "Land exactly on a rival to send their pawn back to the start and earn a bonus throw. Crossed squares and the center are safe. Your pawns may share X-marked safe houses and the finish. Other houses hold one pawn per player. ":
+    "ಎದುರಾಳಿಯ ಕಾಯಿ ಇರುವ ಮನೆಗೆ ಬಂದು ಅದನ್ನು ಆರಂಭಕ್ಕೆ ಕಳುಹಿಸಿ ಮತ್ತೊಮ್ಮೆ ಕವಡೆ ಹಾಕಿ. X ಗುರುತಿನ ಮನೆಗಳು ಮತ್ತು ಮಧ್ಯದ ಮನೆ ಸುರಕ್ಷಿತ. ಸುರಕ್ಷಿತ ಮನೆಯಲ್ಲಿ ಮತ್ತು ಮಧ್ಯದ ಮನೆಯಲ್ಲಿ ನಿಮ್ಮ ಹಲವು ಕಾಯಿಗಳು ಇರಬಹುದು. ಉಳಿದ ಮನೆಗಳಲ್ಲಿ ಒಬ್ಬರ ಒಂದು ಕಾಯಿ ಮಾತ್ರ. ",
   "Player settings": "ಆಟಗಾರರ ಆಯ್ಕೆಗಳು",
   Start: "ಆರಂಭ",
   "Capture to unlock": "ಕಾಯಿ ಹೊಡೆದು ಒಳಗೆ ಬನ್ನಿ",

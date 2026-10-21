@@ -117,6 +117,20 @@ export function newGame(
   avatar = 0,
 ): Game {
   const colors = count === 2 ? [0, 2] : count === 3 ? [0, 1, 2] : [0, 1, 2, 3];
+  const opponentNames = ["Meera", "Arjun", "Tara", "Ajji"].filter(
+    (n) => n.toLocaleLowerCase() !== name.toLocaleLowerCase(),
+  );
+  const opponentPortraits = opponentNames.map((n) => {
+    const choices =
+      n === "Arjun"
+        ? [1, 5]
+        : n === "Ajji"
+          ? [2, 7]
+          : n === "Tara"
+            ? [6, 4]
+            : [0, 4];
+    return choices.find((a) => a !== avatar)!;
+  });
   return {
     size,
     mode,
@@ -126,12 +140,17 @@ export function newGame(
         i === 0
           ? name
           : mode === "solo"
-            ? ["", "Meera", "Arjun", "Tara"][i]
+            ? opponentNames[i - 1]
             : `Player ${i + 1}`,
         c,
         mode === "solo" && i > 0,
       ),
-      avatar: i === 0 ? avatar : [0, 0, 1, 4][i],
+      avatar:
+        i === 0
+          ? avatar
+          : mode === "solo"
+            ? opponentPortraits[i - 1]
+            : ([4, 1, 6, 2].filter((a) => a !== avatar)[i - 1] ?? 5),
     })),
     turn: 0,
     phase: mode === "online" ? "lobby" : "playing",
@@ -168,7 +187,7 @@ export function moveError(g: Game, pawn: number): string | null {
   // Compare physical cells, not path indices: the 7-house route revisits its inner entry.
   const point = path[destination];
   if (
-    destination !== end &&
+    !isSafe(g.size, point) &&
     p.pawns.some(
       (v, i) =>
         i !== pawn &&

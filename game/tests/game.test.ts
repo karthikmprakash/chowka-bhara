@@ -268,3 +268,44 @@ test("Seven-house revisit cannot land on own pawn at the same physical cell", ()
   assert.ok(!legalMoves(g).includes(0));
   assert.throws(() => moveGame(g, 0), /already holds/);
 });
+
+for (const size of [5, 7] as const) {
+  test(`${size}: multiple own pawns may land in every X-marked safe house`, () => {
+    for (let r = 0; r < size; r++)
+      for (let c = 0; c < size; c++) {
+        if (
+          !isSafe(size, [r, c]) ||
+          (r === Math.floor(size / 2) && c === Math.floor(size / 2))
+        )
+          continue;
+        const g = newGame(size, "local");
+        g.players[0].captures = 1;
+        const route = playerPath(size, 0),
+          target = route.findIndex((p) => p[0] === r && p[1] === c);
+        if (target === 0) continue;
+        g.players[0].pawns = [target - 1, target, target, target];
+        g.roll = 1;
+        assert.ok(legalMoves(g).includes(0), `Safe ${r},${c}`);
+        const m = moveGame(g, 0);
+        assert.deepEqual(m.players[0].pawns, [target, target, target, target]);
+      }
+  });
+  test(`${size}: own occupied ordinary houses remain blocked after safe-house stacking fix`, () => {
+    const g = newGame(size);
+    g.players[0].pawns = [0, 1, 0, 0];
+    g.roll = 1;
+    assert.throws(() => moveGame(g, 0), /already holds/);
+  });
+}
+
+test("Practice opponents keep distinct names and portraits when a player uses a bot name", () => {
+  for (const name of ["Meera", "Arjun", "Tara", "Ajji", "You"])
+    for (let avatar = 0; avatar < 8; avatar++) {
+      const g = newGame(5, "solo", 4, true, name, avatar);
+      assert.equal(
+        new Set(g.players.map((p) => p.name.toLocaleLowerCase())).size,
+        4,
+      );
+      assert.equal(new Set(g.players.map((p) => p.avatar)).size, 4);
+    }
+});

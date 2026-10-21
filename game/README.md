@@ -54,17 +54,16 @@ panel side by side.
 
 ## The type on a phone
 
-The wide layout is set in small editorial type, which reads as refined on a
-large screen and as unreadable on a phone. The narrow layout therefore has its
-own scale, owned by the phone design system block at the end of
-`app/globals.css`:
+The shared experience uses a readable scale on laptops and phones. The native
+WebView and browser both load `app/experience.css` after the structural styles.
+Phone-specific proportions include:
 
 - 16px body copy, 13-14px secondary text, 11-12px captions and overlines.
 - 44px touch targets, 20px icons, 52-58px buttons.
 - The set up panel fills the screen and pins its action to the foot, so no
   screen floats in empty space.
 
-Nothing above 700px changes: the wide layout keeps its original sizes.
+The shared reading scale now applies above 700px too: 17px body type, 15-17px controls and descriptions, and 12-14px secondary labels. Desktop setup uses two steps. Games open in the focused play view on all screen sizes.
 
 ## The table on a phone
 
@@ -82,7 +81,7 @@ The 5×5 board uses four shells, scoring 1, 2, 3, 4, or 8. The 7×7 board uses s
 
 A capture resets every rival pawn at the destination to its home square and earns another throw. The 5×5 board has four safe houses at the outer midpoints; its four inner diagonal squares allow captures. The 7×7 board has eight safe houses. The center is the protected finish on both boards. Landing home requires an exact throw and earns a bonus. With no legal move, the throw is skipped; a bonus is retained. First to bring all four pawns home wins.
 
-**Capture to enter** is mandatory: each player must capture an opponent before entering the inner ring. One pawn per player may occupy a house, with shared starts and the central finish. Occupancy uses physical coordinates, including the repeated seven-house entry. This is a deliberately documented house ruleset: throws resolve individually; pawn pairing, blockades, and three-bonus penalties are excluded. The in-app guide explains every rule. Regional reference: https://rollthedice.in/pages/how-to-play-chowka-bara-7-house.
+**Capture to enter** is mandatory: each player must capture an opponent before entering the inner ring. Own pawns may share every X-marked safe house and the central finish. Ordinary houses hold one pawn per player. Occupancy uses physical coordinates, including the repeated seven-house entry. This is a deliberately documented house ruleset: throws resolve individually; pawn pairing, blockades, and three-bonus penalties are excluded. The in-app guide explains every rule. Regional reference: https://rollthedice.in/pages/how-to-play-chowka-bara-7-house.
 
 ## Architecture
 
@@ -143,3 +142,12 @@ Focused board sizing uses its actual available stage height and width via contai
 Observed pawn moves play square by square, including outer corners and the inward turn. The authoritative game updates immediately; a short visual snapshot holds captures and the board's turn handoff until arrival. Each leg takes at most 150 ms and a whole long throw takes at most 840 ms, plus a 16 ms departure frame. Further throws and moves wait for arrival; bot turns respect that window. Animation timers cancel on unmount and resynchronize on a hidden tab or a reduced-motion preference. Opening a game, rematching, and multiple missed moves synchronize directly instead of inventing a route.
 
 Show path uses a colored outer route, a quiet inner route with a capture gate, and a moving direction marker. Capturing unlocks the inner route. There are no per-square numbers. Beginner/Advanced choices now appear only in setup and the player settings dialog, reached through the portrait button.
+
+
+## Readability, heritage and earned progress
+
+`app/experience.css` owns the readable interface scale and the brass, rangoli and courtyard details. A 1280px layout was checked with 16px setup paragraphs, 15px mode controls, 16px field labels and a roughly 598px preview board. Matches use a top player roster with home progress and capture-gate status, freeing the full board width. Every game opens in the focused view; game controls remain together without page scrolling.
+
+Personal progress uses five badges earned from real captures, homecomings, completed games, wins and an online finish. Points and ranks are derived from unlocked badges. The collection and completed-round records are stored only on the current device, with no account, leaderboard, fabricated scores or daily streak pressure. Reopening the same finished round cannot award it twice. Other tabs receive storage updates. Small capture, homecoming and victory celebrations run after pawn arrival and respect reduced motion.
+
+Own pawns can share all X-marked safe houses on both boards. Ordinary-house blocking and capture-before-inner-circle rules remain enforced locally and on the server. Stacks use board-relative spacing, and disabled enemy pieces cannot block taps on your pieces.

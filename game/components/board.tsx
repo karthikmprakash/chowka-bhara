@@ -66,7 +66,9 @@ export const Board = memo(function Board({
       ? path[current.pawns[hover] + g.roll].join(",")
       : null;
   return (
-    <div className={`board-stage ${preview ? "is-preview" : ""}`}>
+    <div
+      className={`board-stage board-size-${g.size} ${preview ? "is-preview" : "has-match"}`}
+    >
       <div className="stage-watermark" aria-hidden="true">
         {t("चौका बारा ")}
       </div>
@@ -185,11 +187,11 @@ export const Board = memo(function Board({
                         ? 3
                         : 4;
                 const rows = Math.ceil(tokens.length / cols);
-                const dx =
-                  ((stack % cols) - (cols - 1) / 2) * (n === 7 ? 17 : 20);
+                const spacing =
+                  tokens.length <= 4 ? 0.28 : tokens.length <= 9 ? 0.23 : 0.19;
+                const dx = ((stack % cols) - (cols - 1) / 2) * spacing;
                 const dy =
-                  (Math.floor(stack / cols) - (rows - 1) / 2) *
-                  (n === 7 ? 17 : 20);
+                  (Math.floor(stack / cols) - (rows - 1) / 2) * spacing;
                 return (
                   <button
                     key={`${p.id}-${token.pawn}`}
@@ -210,14 +212,14 @@ export const Board = memo(function Board({
                         "--row": token.point[0] + 0.5,
                         left: `${((token.point[1] + 0.5) / n) * 100}%`,
                         top: `${((token.point[0] + 0.5) / n) * 100}%`,
-                        "--dx": `${dx}px`,
-                        "--dy": `${dy}px`,
+                        "--dx": `calc(${dx} * 100cqw / var(--n))`,
+                        "--dy": `calc(${dy} * 100cqw / var(--n))`,
                         "--pawn-size":
-                          tokens.length > 4
-                            ? "15px"
-                            : n === 7
-                              ? "19px"
-                              : "24px",
+                          tokens.length > 9
+                            ? "clamp(10px,calc(100cqw / var(--n) * .16),18px)"
+                            : tokens.length > 4
+                              ? "clamp(13px,calc(100cqw / var(--n) * .22),24px)"
+                              : "clamp(20px,calc(100cqw / var(--n) * .31),34px)",
                       } as CSSProperties
                     }
                   >

@@ -31,11 +31,7 @@ export function usePlayView(game: Game | null) {
       setFocused(false);
       if (document.fullscreenElement === rootRef.current)
         void document.exitFullscreen().catch(() => {});
-    } else if (
-      game.phase === "playing" &&
-      matchMedia("(max-width: 700px)").matches
-    )
-      setFocused(true);
+    } else if (game.phase === "playing") setFocused(true);
   }, [game?.phase, game?.players[0]?.id]);
   useEffect(() => {
     if (!focused) return;

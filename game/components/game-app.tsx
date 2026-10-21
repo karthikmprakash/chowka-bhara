@@ -45,6 +45,16 @@ import { useGameAudio } from "./use-game-audio";
 import { usePawnTravel } from "./use-pawn-travel";
 import { RouteExplanation } from "./route-guide";
 import { ExperiencePicker } from "./experience-picker";
+import { Kolam } from "./heritage";
+import { MatchHud } from "./match-hud";
+import { MatchMomentCard, momentCopy } from "./match-moments";
+import { useMatchMoment } from "./use-match-moment";
+import {
+  useJourney,
+  JourneySummary,
+  JourneyPanel,
+  BadgeToast,
+} from "./journey";
 import { Board } from "./board";
 import { Cowries } from "./cowries";
 import { usePlayView } from "./use-play-view";
@@ -78,7 +88,8 @@ interface Session {
   token: string;
   playerId: string;
 }
-type Modal = "rules" | "join" | "leave" | "about" | "profile" | null;
+type Modal =
+  "rules" | "join" | "leave" | "about" | "profile" | "journey" | null;
 const LOCAL_KEY = "chowka-bara:saved:v1",
   ROOM_KEY = "chowka-bara:room:v1";
 function GridGlyph({ size }: { size: number }) {
@@ -112,6 +123,7 @@ function GameScreen() {
     [game, setGame] = useState<Game | null>(null),
     [session, setSession] = useState<Session | null>(null);
   const { visualGame, moving: pawnMoving, travel } = usePawnTravel(game);
+  const moment = useMatchMoment(visualGame);
   const movingRef = useRef(pawnMoving);
   movingRef.current = pawnMoving;
   const [modal, setModal] = useState<Modal>(null),
@@ -220,6 +232,12 @@ function GameScreen() {
     session && game
       ? game.players.findIndex((p) => p.id === session.playerId)
       : 0;
+  const { journey, earned } = useJourney(
+    pawnMoving ? null : visualGame,
+    session?.playerId ||
+      (game?.mode !== "online" ? game?.players[0]?.id : null) ||
+      null,
+  );
   const myTurn =
     !!game &&
     game.phase === "playing" &&
@@ -595,7 +613,13 @@ function GameScreen() {
     if (!session) return;
     const link = `${location.origin}${location.pathname}?room=${session.code}`;
     // On a phone the device's own share sheet is the natural way to invite.
-    if (await shareInvite(t("Your table is open"), t("Join my Chowka Bara table with this code: ") + session.code, link)) {
+    if (
+      await shareInvite(
+        t("Your table is open"),
+        t("Join my Chowka Bara table with this code: ") + session.code,
+        link,
+      )
+    ) {
       return;
     }
     try {
@@ -735,7 +759,9 @@ function GameScreen() {
         <strong>{t("Capture to enter")}</strong>
         <span>{t("Make a capture to enter the inner ring.")}</span>
         <span>
-          {t("One pawn per player in each house. Start and finish can be shared.")}
+          {t(
+            "Own pawns may share X-marked safe houses. Other houses hold one pawn per player.",
+          )}
         </span>
       </p>
     </div>
@@ -818,7 +844,7 @@ function GameScreen() {
   return (
     <div
       ref={rootRef}
-      className={`app-shell ${focused ? "is-focused" : ""} ${game?.phase === "playing" ? "is-playing" : ""} ${stillThrow ? "still-throw" : ""}`}
+      className={`app-shell ${focused ? "is-focused" : ""} ${game?.phase === "playing" ? "is-playing" : ""} ${game?.phase === "finished" ? "is-finished" : ""} ${stillThrow ? "still-throw" : ""}`}
       data-screen={
         compact && !focused
           ? game
@@ -911,9 +937,7 @@ function GameScreen() {
         {compact && screen !== "home" && !game && (
           <button
             className="icon-button screen-back"
-            onClick={() =>
-              setScreen(screen === "seat" ? "setup" : "home")
-            }
+            onClick={() => setScreen(screen === "seat" ? "setup" : "home")}
             aria-label={t("Back")}
             title={t("Back")}
           >
@@ -1031,6 +1055,7 @@ function GameScreen() {
         <section className="page-heading">
           {compact && screen === "home" && !game ? (
             <div className="title-screen">
+              <Kolam className="welcome-kolam" />
               <span className="brand-symbol title-mark">
                 <i />
                 <i />
@@ -1042,13 +1067,34 @@ function GameScreen() {
                 <span className="brand-period">.</span>
               </h1>
               <small>{t("THE INDIAN GAME TABLE")}</small>
+              <p className="welcome-line">
+                {t("From our courtyards to your screen.")}
+              </p>
+              <JourneySummary
+                journey={journey}
+                onOpen={() => setModal("journey")}
+              />
               <div className="home-actions">
                 <button
                   className="primary-button home-cta"
                   onClick={() => setScreen("setup")}
                 >
-                  <span>{t("Play")}</span>
+                  <span>{t("Play with friends")}</span>
                   <ArrowRight size={18} />
+                </button>
+                <button
+                  className="secondary-button quick-practice"
+                  onClick={() => {
+                    setMode("solo");
+                    setCount(2);
+                    setResume(null);
+                    setGame(
+                      newGame(5, "solo", 2, true, name.trim() || "You", avatar),
+                    );
+                  }}
+                >
+                  {t("Practice now")}
+                  <Bot size={18} />
                 </button>
                 <button
                   className="subtle-button home-rules"
@@ -1080,14 +1126,23 @@ function GameScreen() {
               </p>
             </div>
           )}
-          <div className="heritage-stamp">
-            <Flower size={24} strokeWidth={1} />
-            <span>
-              {t("ROOTED IN INDIA ")}
-              <br />
-              {t("OPEN TO EVERYONE ")}
-            </span>
-          </div>
+          {!game && !compact ? (
+            <div className="welcome-journey">
+              <JourneySummary
+                journey={journey}
+                onOpen={() => setModal("journey")}
+              />
+            </div>
+          ) : (
+            <div className="heritage-stamp">
+              <Flower size={24} strokeWidth={1} />
+              <span>
+                {t("ROOTED IN INDIA ")}
+                <br />
+                {t("OPEN TO EVERYONE ")}
+              </span>
+            </div>
+          )}
         </section>
         <div className="game-layout">
           <section className="table-section" aria-label={t("Game table")}>
@@ -1136,73 +1191,77 @@ function GameScreen() {
                 )}
               </div>
             </div>
-            {showPath && !advanced && <RouteExplanation game={boardGame} />}
-            <Board
-              game={boardGame}
-              travel={travel}
-              canPlay={playable}
-              preview={!game || game.phase === "lobby"}
-              showPath={showPath && !advanced}
-              onMove={move}
-              throwOverlay={
-                game?.phase === "playing" && (rolling || showShot) ? (
-                  <div
-                    className={`board-throw-layer ${rolling ? "is-tossing" : "is-result"}`}
-                  >
+            {game && game.phase !== "lobby" && <MatchHud game={boardGame} />}
+            <div className="match-stage-wrap">
+              {!compact && <MatchMomentCard moment={moment} />}
+              {showPath && !advanced && <RouteExplanation game={boardGame} />}
+              <Board
+                game={boardGame}
+                travel={travel}
+                canPlay={playable}
+                preview={!game || game.phase === "lobby"}
+                showPath={showPath && !advanced}
+                onMove={move}
+                throwOverlay={
+                  game?.phase === "playing" && (rolling || showShot) ? (
                     <div
-                      className="board-throw-card"
-                      role="status"
-                      aria-live="polite"
+                      className={`board-throw-layer ${rolling ? "is-tossing" : "is-result"}`}
                     >
-                      <span className="overline">
-                        {rolling
-                          ? t(
-                              game.players[game.turn].name === "You"
-                                ? "Your turn"
-                                : `${game.players[game.turn].name}’s turn`,
-                            )
-                          : t(
-                              (shot?.name || game.players[game.turn].name) ===
-                                "You"
-                                ? "Your turn"
-                                : `${shot?.name || game.players[game.turn].name}’s turn`,
-                            )}
-                      </span>
-                      <Cowries
-                        count={shellCount(game.size)}
-                        shells={rolling ? [] : shot?.shells || game.shells}
-                        rolling={rolling}
-                      />
-                      <div className="board-throw-score">
-                        {rolling ? (
-                          <span>{t("Tossing…")}</span>
-                        ) : (
-                          <>
-                            <strong>{shot?.score}</strong>
-                            <span>
-                              {t(
-                                shot?.bonus
-                                  ? "BONUS THROW EARNED"
-                                  : "SPACES TO MOVE",
+                      <div
+                        className="board-throw-card"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        <span className="overline">
+                          {rolling
+                            ? t(
+                                game.players[game.turn].name === "You"
+                                  ? "Your turn"
+                                  : `${game.players[game.turn].name}’s turn`,
+                              )
+                            : t(
+                                (shot?.name || game.players[game.turn].name) ===
+                                  "You"
+                                  ? "Your turn"
+                                  : `${shot?.name || game.players[game.turn].name}’s turn`,
                               )}
-                            </span>
-                          </>
+                        </span>
+                        <Cowries
+                          count={shellCount(game.size)}
+                          shells={rolling ? [] : shot?.shells || game.shells}
+                          rolling={rolling}
+                        />
+                        <div className="board-throw-score">
+                          {rolling ? (
+                            <span>{t("Tossing…")}</span>
+                          ) : (
+                            <>
+                              <strong>{shot?.score}</strong>
+                              <span>
+                                {t(
+                                  shot?.bonus
+                                    ? "BONUS THROW EARNED"
+                                    : "SPACES TO MOVE",
+                                )}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        {!rolling && (
+                          <span className="throw-card-hint">
+                            {t(
+                              myTurn && game.roll !== null
+                                ? "Choose your pawn"
+                                : "The game is on",
+                            )}
+                          </span>
                         )}
                       </div>
-                      {!rolling && (
-                        <span className="throw-card-hint">
-                          {t(
-                            myTurn && game.roll !== null
-                              ? "Choose your pawn"
-                              : "The game is on",
-                          )}
-                        </span>
-                      )}
                     </div>
-                  </div>
-                ) : null
-              }
-            />
+                  ) : null
+                }
+              />
+            </div>
             {game?.phase === "playing" && (
               <div className="board-turn-caption" role="status">
                 <span
@@ -1253,65 +1312,49 @@ function GameScreen() {
           </section>
           <aside className="game-panel">
             {!game ? (
-              compact ? (
-                screen === "setup" ? (
-                  <>
-                    <div className="panel-title">
-                      <span className="overline">{t("THE TABLE")}</span>
-                      <h2>{t("Set the table.")}</h2>
-                      <p>
-                        {t(
-                          "Choose your game, your board, and the house rules.",
-                        )}
-                      </p>
-                    </div>
-                    {modeBlock}
-                    {boardBlock}
-                    {mode !== "online" && playersBlock}
-                    {rulesBlock}
-                    <button
-                      className="primary-button"
-                      onClick={() => setScreen("seat")}
-                    >
-                      <span>{t("Next")}</span>
-                      <ArrowRight size={18} />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="panel-title">
-                      <span className="overline">{t("YOUR SEAT")}</span>
-                      <h2>{t("Take your seat.")}</h2>
-                      <p>
-                        {t("Pick a face, a name, and how much help you want.")}
-                      </p>
-                    </div>
-                    <AvatarPicker value={avatar} onChange={chooseAvatar} />
-                    {nameBlock}
-                    <ExperiencePicker />
-                    {errorBlock}
-                    {actionBlock}
-                  </>
-                )
-              ) : (
+              screen !== "seat" ? (
                 <>
                   <div className="panel-title">
-                    <span className="overline">{t("A SEAT FOR EVERYONE")}</span>
-                    <h2>{t("Play your way.")}</h2>
-                    <p>{t("Your people, your board, your next game.")}</p>
+                    <span className="overline">{t("THE TABLE")}</span>
+                    <h2>{t("Set the table.")}</h2>
+                    <p>
+                      {t("Choose your game, your board, and the house rules.")}
+                    </p>
                   </div>
                   {modeBlock}
                   {boardBlock}
-                  <AvatarPicker value={avatar} onChange={chooseAvatar} />
-                  <div className="settings-row">
-                    {nameBlock}
-                    {mode !== "online" && playersBlock}
-                  </div>
-                  <ExperiencePicker />
+                  {mode !== "online" && playersBlock}
                   {rulesBlock}
+                  {resumeBlock}
+                  <button
+                    className="primary-button"
+                    onClick={() => setScreen("seat")}
+                  >
+                    <span>{t("Take your seat.")}</span>
+                    <ArrowRight size={18} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="panel-title">
+                    <span className="overline">{t("YOUR SEAT")}</span>
+                    <h2>{t("Take your seat.")}</h2>
+                    <p>
+                      {t("Pick a face, a name, and how much help you want.")}
+                    </p>
+                  </div>
+                  <AvatarPicker value={avatar} onChange={chooseAvatar} />
+                  {nameBlock}
+                  <ExperiencePicker />
                   {errorBlock}
                   {actionBlock}
-                  {resumeBlock}
+                  <button
+                    className="subtle-button"
+                    onClick={() => setScreen("setup")}
+                  >
+                    <ChevronLeft size={16} />
+                    {t("Change board or game")}
+                  </button>
                 </>
               )
             ) : game.phase === "lobby" ? (
@@ -1424,6 +1467,10 @@ function GameScreen() {
                   <h2>{game.players[game.winner!].name}</h2>
                   <p>{t("All roads led home. This one led to victory.")}</p>
                 </div>
+                <JourneySummary
+                  journey={journey}
+                  onOpen={() => setModal("journey")}
+                />
                 <div className="finish-results">
                   {game.players.map((p, i) => (
                     <div key={p.id}>
@@ -1730,6 +1777,7 @@ function GameScreen() {
           ಆಡೋಣ ಬನ್ನಿ <Flower size={14} />
         </span>
       </footer>
+      <BadgeToast earned={earned} />
       {notice && (
         <div className="toast" role="status">
           <CheckCircle2 size={17} />
@@ -1743,24 +1791,32 @@ function GameScreen() {
             setError("");
           }}
           title={t(
-            modal === "profile"
-              ? "Player settings"
-              : modal === "rules"
-                ? "A small guide to a great game."
-                : modal === "join"
-                  ? "There’s a seat for you."
-                  : modal === "leave"
-                    ? "Step away from the table?"
-                    : "Old roots. New connections.",
+            modal === "journey"
+              ? "Your courtyard journey"
+              : modal === "profile"
+                ? "Player settings"
+                : modal === "rules"
+                  ? "A small guide to a great game."
+                  : modal === "join"
+                    ? "There’s a seat for you."
+                    : modal === "leave"
+                      ? "Step away from the table?"
+                      : "Old roots. New connections.",
           )}
         >
-          {modal === "profile" ? (
+          {modal === "journey" ? (
+            <JourneyPanel journey={journey} />
+          ) : modal === "profile" ? (
             <>
               <AvatarPicker
                 value={game?.players[me]?.avatar ?? avatar}
                 onChange={chooseAvatar}
               />
               <ExperiencePicker />
+              <JourneySummary
+                journey={journey}
+                onOpen={() => setModal("journey")}
+              />
             </>
           ) : modal === "join" ? (
             <form onSubmit={join}>
@@ -1902,34 +1958,46 @@ function GameScreen() {
         (game.phase === "playing" || (focused && game.phase === "finished")) &&
         !modal && (
           <div className="mobile-turn-bar">
-            <div>
-              <span
-                className="result-dot"
-                style={{ background: COLORS[game.players[game.turn].color] }}
-              />
-              <strong>
-                {t(
-                  game.phase === "finished"
-                    ? "A game well played."
-                    : myTurn
-                      ? "Your turn"
-                      : `${game.players[game.turn].name}’s turn`,
-                )}
-              </strong>
-              {(pawnMoving || rolling || (myTurn && game.roll !== null)) && (
-                <small>
+            {moment ? (
+              <div className="moment-inline" role="status">
+                <span className="moment-mark" aria-hidden="true">
+                  ✳
+                </span>
+                <div>
+                  <strong>{t(momentCopy(moment.kind).title)}</strong>
+                  <small>{t(momentCopy(moment.kind).note)}</small>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <span
+                  className="result-dot"
+                  style={{ background: COLORS[game.players[game.turn].color] }}
+                />
+                <strong>
                   {t(
-                    pawnMoving
-                      ? "Moving pawn…"
-                      : rolling
-                        ? "Tossing…"
-                        : game.roll !== null
-                          ? moveLabel(game.roll)
-                          : "",
+                    game.phase === "finished"
+                      ? "A game well played."
+                      : myTurn
+                        ? "Your turn"
+                        : `${game.players[game.turn].name}’s turn`,
                   )}
-                </small>
-              )}
-            </div>
+                </strong>
+                {(pawnMoving || rolling || (myTurn && game.roll !== null)) && (
+                  <small>
+                    {t(
+                      pawnMoving
+                        ? "Moving pawn…"
+                        : rolling
+                          ? "Tossing…"
+                          : game.roll !== null
+                            ? moveLabel(game.roll)
+                            : "",
+                    )}
+                  </small>
+                )}
+              </div>
+            )}
             {game.phase === "finished" ? (
               <button
                 className="primary-button"
@@ -2107,7 +2175,7 @@ function RulesGuide({ size }: { size: BoardSize }) {
           <strong>{t("Capture & find shelter")}</strong>
           <p>
             {t(
-              "Land exactly on a rival to send their pawn back to the start and earn a bonus throw. Crossed squares and the center are safe. One pawn per player in each house; your start and the finish can hold all four. ",
+              "Land exactly on a rival to send their pawn back to the start and earn a bonus throw. Crossed squares and the center are safe. Your pawns may share X-marked safe houses and the finish. Other houses hold one pawn per player. ",
             )}
           </p>
         </li>
