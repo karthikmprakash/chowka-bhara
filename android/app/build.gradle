@@ -2,6 +2,9 @@ apply plugin: 'com.android.application'
 
 // Opt-in local preview. Release builds always retain capacitor.config.json's
 // production URL; a separate app id keeps local play out of the installed app.
+// Released builds take their version from the git tag through these props.
+def appVersionName = providers.gradleProperty('appVersionName').orNull
+def appVersionCode = providers.gradleProperty('appVersionCode').orNull
 def localServerUrl = providers.gradleProperty('localServerUrl').orNull
 if (localServerUrl && !(localServerUrl ==~ /http:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2):\d+\/?/)) {
     throw new GradleException('localServerUrl must be a localhost/emulator HTTP URL with a port')
@@ -24,8 +27,8 @@ android {
         applicationId "com.chowkabara.game"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode ? appVersionCode.toInteger() : 1
+        versionName appVersionName ?: "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

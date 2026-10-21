@@ -35,7 +35,7 @@ test("Progress starts honestly empty and repairs damaged device data", () => {
   assert.equal(journeyPoints(freshJourney()), 0);
 });
 test("Achievements use the selected player and only real captures, homecomings and finishes", () => {
-  let j = freshJourney();
+  const j = freshJourney();
   const g = newGame();
   assert.deepEqual(awardJourney(j, g, g.players[0].id).earned, []);
   g.players[1].captures = 2;

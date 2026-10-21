@@ -61,6 +61,7 @@ import { Cowries } from "./cowries";
 import { usePlayView } from "./use-play-view";
 import { useIsCompact } from "@/hooks/use-mobile";
 import type { ThrowingPlayer } from "@/lib/presentation";
+import Link from "next/link";
 import { isNativeApp, setKeepAwake, shareInvite } from "@/lib/native";
 import { PreferencesProvider, usePreferences } from "./preferences";
 import {
@@ -928,7 +929,7 @@ function GameScreen() {
             <ChevronLeft size={18} />
           </button>
         )}
-        <a
+        <Link
           href="/"
           className="brand"
           onClick={(e) => {
@@ -951,7 +952,7 @@ function GameScreen() {
             <span className="brand-period">.</span>
             <small>{t("THE INDIAN GAME TABLE")}</small>
           </span>
-        </a>
+        </Link>
         <nav aria-label={t("Main navigation")}>
           <button
             className="nav-link nav-active"

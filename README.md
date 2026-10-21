@@ -21,6 +21,18 @@ android/      Capacitor Android app: a native shell around the same game
 See `game/README.md` for setup, testing, game rules, and architecture, and
 [`android/README.md`](./android/README.md) for the Android app.
 
+## Pipeline
+
+```
+pull request ──▶ CI (type, lint, test, build, room API, debug APK)
+merge to main ──▶ deploy the Cloudflare Worker
+tag v1.2.3   ──▶ signed AAB + APK, Play internal draft, GitHub release
+```
+
+`main` is protected and always deployable. Releases are semver tags; the tag
+sets the Android version name and code. The full process, the required secrets
+and the Play Console setup are in [`docs/RELEASING.md`](./docs/RELEASING.md).
+
 ## Requirements
 
 Node.js 22.13 or newer.
