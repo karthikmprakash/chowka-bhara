@@ -1819,10 +1819,10 @@ function GameScreen() {
                   "Local and practice games stay on your device. Online rooms store names and game state and expire after 24 hours. No account is required by the game; hosting access rules may still apply. ",
                 )}
               </small>
-              <Link href="/privacy" className="about-policy-link">
+              <a href="/privacy" className="about-policy-link">
                 {t("Read the privacy policy ")}
                 <ArrowUpRight size={13} />
-              </Link>
+              </a>
             </div>
           ) : (
             <RulesGuide size={game?.size || size} />
