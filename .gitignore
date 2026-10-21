@@ -21,3 +21,6 @@ yarn-error.log*
 # Env files
 .env*
 !.env.example
+
+# Archify scratch (candidate + gate evidence)
+.archify/
