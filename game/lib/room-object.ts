@@ -186,6 +186,11 @@ export class Room extends DurableObject<Cloudflare.Env> {
       this.hello(ws, message.token);
       return;
     }
+    if (message.t === "ping") {
+      // Keeps a phone's socket honest without touching storage.
+      ws.send(JSON.stringify({ t: "pong" }));
+      return;
+    }
     const seat = this.seatOf(ws);
     if (!seat) {
       this.refuse(ws, "This seat is no longer at the table.");

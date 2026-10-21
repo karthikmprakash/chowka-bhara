@@ -51,12 +51,32 @@ export function useRoomSocket({
     let attempt = 0;
     let retry: ReturnType<typeof setTimeout> | undefined;
     let current: WebSocket | null = null;
+    let beat: ReturnType<typeof setInterval> | undefined;
+    let pong: ReturnType<typeof setTimeout> | undefined;
+    let paused = document.hidden;
 
     const rejectAll = (error: Error) => {
       for (const [id, entry] of pending.current) {
         pending.current.delete(id);
         entry.reject(error);
       }
+    };
+
+    // A phone that is backgrounded can lose its socket without a close event.
+    // Any traffic proves the link is alive; silence for six seconds does not.
+    const ping = (ws: WebSocket) => {
+      if (ws.readyState !== WebSocket.OPEN) return;
+      try {
+        ws.send(JSON.stringify({ t: "ping" }));
+      } catch {
+        return;
+      }
+      clearTimeout(pong);
+      pong = setTimeout(() => {
+        try {
+          ws.close();
+        } catch {}
+      }, 6000);
     };
 
     const connect = () => {
@@ -73,9 +93,14 @@ export function useRoomSocket({
         attempt = 0;
         setStatus("open");
         ws.send(JSON.stringify({ t: "hello", token }));
+        clearInterval(beat);
+        beat = setInterval(() => {
+          if (!document.hidden) ping(ws);
+        }, 25000);
       };
 
       ws.onmessage = (event) => {
+        clearTimeout(pong);
         let message: { t?: string; [key: string]: unknown };
         try {
           message = JSON.parse(String(event.data));
@@ -109,24 +134,54 @@ export function useRoomSocket({
 
       ws.onclose = () => {
         if (socket.current === ws) socket.current = null;
+        if (current === ws) current = null;
+        clearInterval(beat);
+        clearTimeout(pong);
         rejectAll(new Error("Reconnecting to your table…"));
         if (disposed) return;
         setStatus("closed");
         attempt += 1;
+        // A hidden app retries slowly instead of never, so an occluded tab or a
+        // backgrounded phone still heals on its own.
         retry = setTimeout(
           connect,
-          Math.min(8000, 500 * 2 ** Math.min(attempt, 4)),
+          paused ? 30000 : Math.min(8000, 500 * 2 ** Math.min(attempt, 4)),
         );
       };
 
       ws.onerror = () => ws.close();
     };
 
+    const wake = () => {
+      if (document.hidden) {
+        paused = true;
+        return;
+      }
+      paused = false;
+      const ws = current;
+      if (ws && ws.readyState === WebSocket.CONNECTING) return;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ping(ws);
+        return;
+      }
+      clearTimeout(retry);
+      connect();
+    };
+    const online = () => {
+      if (!document.hidden) wake();
+    };
+
+    document.addEventListener("visibilitychange", wake);
+    window.addEventListener("online", online);
     connect();
 
     return () => {
       disposed = true;
       clearTimeout(retry);
+      clearInterval(beat);
+      clearTimeout(pong);
+      document.removeEventListener("visibilitychange", wake);
+      window.removeEventListener("online", online);
       rejectAll(new Error("Connection closed."));
       socket.current = null;
       current?.close();
