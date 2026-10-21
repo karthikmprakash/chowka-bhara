@@ -920,17 +920,6 @@ function GameScreen() {
         </nav>
         <div className="header-actions">
           <button
-            className="language-button"
-            onClick={() => setLanguage(language === "en" ? "kn" : "en")}
-            aria-label={
-              language === "en" ? "ಕನ್ನಡಕ್ಕೆ ಬದಲಿಸಿ" : "Switch to English"
-            }
-            title={language === "en" ? "ಕನ್ನಡಕ್ಕೆ ಬದಲಿಸಿ" : "Switch to English"}
-          >
-            <Languages size={16} />
-            <span>{language === "en" ? "ಕನ್ನಡ" : "English"}</span>
-          </button>
-          <button
             className="icon-button theme-button"
             onClick={() => setTheme(theme === "light" ? "dark" : "light")}
             aria-label={
@@ -1684,6 +1673,27 @@ function GameScreen() {
                 onChange={chooseAvatar}
               />
               <ExperiencePicker />
+              <div className="settings-row">
+                <div>
+                  <label>{t("Language")}</label>
+                </div>
+                <button
+                  type="button"
+                  className="language-button"
+                  onClick={() => setLanguage(language === "en" ? "kn" : "en")}
+                  aria-label={
+                    language === "en"
+                      ? "ಕನ್ನಡಕ್ಕೆ ಬದಲಿಸಿ"
+                      : "Switch to English"
+                  }
+                  title={
+                    language === "en" ? "ಕನ್ನಡಕ್ಕೆ ಬದಲಿಸಿ" : "Switch to English"
+                  }
+                >
+                  <Languages size={16} />
+                  <span>{language === "en" ? "ಕನ್ನಡ" : "English"}</span>
+                </button>
+              </div>
               <JourneySummary
                 journey={journey}
                 onOpen={() => setModal("journey")}

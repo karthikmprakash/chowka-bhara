@@ -49,6 +49,7 @@ export const kannada: Record<string, string> = {
     "ಹೊರಸುತ್ತಿನ ದಾರಿಯಲ್ಲಿ ಸಾಗಿರಿ. ಕಾಯಿ ಹೊಡೆದ ಬಳಿಕ ಒಳಸುತ್ತಿಗೆ ಬನ್ನಿ.",
   "Moving pawn…": "ಕಾಯಿ ಸಾಗುತ್ತಿದೆ…",
   "Play assistance": "ಆಟದ ಸಹಾಯ",
+  Language: "ಭಾಷೆ",
   Beginner: "ಆರಂಭಿಕ",
   Advanced: "ಅನುಭವಿ",
   "Your judgement. No move hints.": "ನಿಮ್ಮ ಯೋಚನೆ. ನಡೆಯ ಸುಳಿವುಗಳಿಲ್ಲ.",
