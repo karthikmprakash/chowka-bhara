@@ -41,13 +41,14 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarPicker, portraitOf } from "./avatar";
 import { ThrowButton } from "./throw-button";
+import { GameplayDock } from "./gameplay-dock";
 import { useGameAudio } from "./use-game-audio";
 import { usePawnTravel } from "./use-pawn-travel";
 import { RouteExplanation } from "./route-guide";
 import { ExperiencePicker } from "./experience-picker";
 import { Kolam } from "./heritage";
 import { MatchHud } from "./match-hud";
-import { MatchMomentCard, momentCopy } from "./match-moments";
+import { MatchMomentCard } from "./match-moments";
 import { useMatchMoment } from "./use-match-moment";
 import {
   useJourney,
@@ -59,7 +60,8 @@ import { Board } from "./board";
 import { Cowries } from "./cowries";
 import { usePlayView } from "./use-play-view";
 import { useIsCompact } from "@/hooks/use-mobile";
-import { latestThrow, type ThrowSnapshot } from "@/lib/presentation";
+import type { ThrowingPlayer } from "@/lib/presentation";
+import Link from "next/link";
 import { isNativeApp, setKeepAwake, shareInvite } from "@/lib/native";
 import { PreferencesProvider, usePreferences } from "./preferences";
 import {
@@ -129,7 +131,7 @@ function GameScreen() {
   const [modal, setModal] = useState<Modal>(null),
     [roomCode, setRoomCode] = useState(""),
     [busy, setBusy] = useState(false),
-    [rolling, setRolling] = useState(false),
+    [throwing, setThrowing] = useState<ThrowingPlayer | null>(null),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [sound, setSound] = useState(false),
@@ -138,6 +140,7 @@ function GameScreen() {
     [copied, setCopied] = useState(false),
     [resume, setResume] = useState<Game | null>(null),
     [hydrated, setHydrated] = useState(false);
+  const rolling = throwing !== null;
   // On a phone the app is a series of single screens: welcome, set the
   // table, take your seat, the table, and the game. The wide layout keeps
   // its one long page.
@@ -165,36 +168,8 @@ function GameScreen() {
     immersive,
     immerse,
   } = usePlayView(game);
-  const [shot, setShot] = useState<ThrowSnapshot | null>(null),
-    [showShot, setShowShot] = useState(false),
-    [stillThrow, setStillThrow] = useState(false);
-  const seenGame = useRef(""),
-    seenThrow = useRef(""),
-    throwTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const shotKey = latestThrow(game)?.key;
-  useEffect(() => {
-    const identity = game?.players[0]?.id || "";
-    const next = latestThrow(game);
-    if (identity !== seenGame.current) {
-      seenGame.current = identity;
-      seenThrow.current = next?.key || "";
-      setShot(next);
-      setShowShot(false);
-      return;
-    }
-    if (!next) {
-      seenThrow.current = "";
-      setShot(null);
-      setShowShot(false);
-      return;
-    }
-    if (seenThrow.current === next.key) return;
-    seenThrow.current = next.key;
-    setShot(next);
-    setShowShot(true);
-    const timer = setTimeout(() => setShowShot(false), 1400);
-    return () => clearTimeout(timer);
-  }, [shotKey, game?.players[0]?.id]);
+  const [stillThrow, setStillThrow] = useState(false);
+  const throwTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
       if (throwTimer.current) clearTimeout(throwTimer.current);
@@ -443,26 +418,25 @@ function GameScreen() {
     async (instant = false) => {
       if (inFlight.current || rolling || movingRef.current || !gameRef.current)
         return;
+      const current = gameRef.current;
+      if (current.phase !== "playing" || current.roll !== null) return;
+      const player = current.players[current.turn];
       setStillThrow(instant);
-      setShowShot(false);
-      setRolling(true);
+      // Latch the thrower before a skipped move or remote response advances
+      // the turn. The persistent result itself comes from confirmed game data.
+      setThrowing({ id: player.id, name: player.name, color: player.color });
+      setError("");
       chime();
-      const frame = rootRef.current?.querySelector(".board-frame");
-      if (frame && !focused) {
-        const rect = frame.getBoundingClientRect();
-        if (rect.top < 0 || rect.bottom > innerHeight - 90)
-          frame.scrollIntoView({ block: "center", behavior: "instant" });
-      }
       const duration =
         instant || matchMedia("(prefers-reduced-motion: reduce)").matches
           ? 0
           : 300;
       if (sessionRef.current) {
         const start = performance.now();
-        await onlineAction("roll");
+        const success = await onlineAction("roll");
         throwTimer.current = setTimeout(
-          () => setRolling(false),
-          Math.max(0, duration - (performance.now() - start)),
+          () => setThrowing(null),
+          success ? Math.max(0, duration - (performance.now() - start)) : 0,
         );
       } else {
         const expected = gameRef.current;
@@ -470,18 +444,17 @@ function GameScreen() {
           setGame((g) =>
             g === expected ? rollGame(g, randomShells(g.size)) : g,
           );
-          setRolling(false);
+          setThrowing(null);
         }, duration);
       }
     },
-    [rolling, chime, onlineAction, focused, rootRef],
+    [rolling, chime, onlineAction],
   );
   const move = useCallback(
     async (pawn: number) => {
       if (inFlight.current || movingRef.current) return;
       const g = gameRef.current;
       if (!g) return;
-      setShowShot(false);
       setError("");
       if (sessionRef.current) {
         if (await onlineAction("move", { pawn })) chime("move");
@@ -593,11 +566,10 @@ function GameScreen() {
   }
   function clearTable() {
     exitFocus();
-    setShowShot(false);
     if (throwTimer.current) clearTimeout(throwTimer.current);
     setGame(null);
     setSession(null);
-    setRolling(false);
+    setThrowing(null);
     setError("");
     setShowPath(false);
     setModal(null);
@@ -857,7 +829,7 @@ function GameScreen() {
   return (
     <div
       ref={rootRef}
-      className={`app-shell ${focused ? "is-focused" : ""} ${game?.phase === "playing" ? "is-playing" : ""} ${game?.phase === "finished" ? "is-finished" : ""} ${stillThrow ? "still-throw" : ""}`}
+      className={`app-shell ${focused ? "is-focused" : ""} ${game?.phase === "playing" ? "is-playing has-gameplay-dock" : ""} ${game?.phase === "finished" ? `is-finished ${focused ? "has-gameplay-dock" : ""}` : ""} ${stillThrow ? "still-throw" : ""}`}
       data-screen={
         compact && !focused
           ? game
@@ -957,7 +929,7 @@ function GameScreen() {
             <ChevronLeft size={18} />
           </button>
         )}
-        <a
+        <Link
           href="/"
           className="brand"
           onClick={(e) => {
@@ -980,7 +952,7 @@ function GameScreen() {
             <span className="brand-period">.</span>
             <small>{t("THE INDIAN GAME TABLE")}</small>
           </span>
-        </a>
+        </Link>
         <nav aria-label={t("Main navigation")}>
           <button
             className="nav-link nav-active"
@@ -1216,64 +1188,6 @@ function GameScreen() {
                 preview={!game || game.phase === "lobby"}
                 showPath={showPath && !advanced}
                 onMove={move}
-                throwOverlay={
-                  game?.phase === "playing" && (rolling || showShot) ? (
-                    <div
-                      className={`board-throw-layer ${rolling ? "is-tossing" : "is-result"}`}
-                    >
-                      <div
-                        className="board-throw-card"
-                        role="status"
-                        aria-live="polite"
-                      >
-                        <span className="overline">
-                          {rolling
-                            ? t(
-                                game.players[game.turn].name === "You"
-                                  ? "Your turn"
-                                  : `${game.players[game.turn].name}’s turn`,
-                              )
-                            : t(
-                                (shot?.name || game.players[game.turn].name) ===
-                                  "You"
-                                  ? "Your turn"
-                                  : `${shot?.name || game.players[game.turn].name}’s turn`,
-                              )}
-                        </span>
-                        <Cowries
-                          count={shellCount(game.size)}
-                          shells={rolling ? [] : shot?.shells || game.shells}
-                          rolling={rolling}
-                        />
-                        <div className="board-throw-score">
-                          {rolling ? (
-                            <span>{t("Tossing…")}</span>
-                          ) : (
-                            <>
-                              <strong>{shot?.score}</strong>
-                              <span>
-                                {t(
-                                  shot?.bonus
-                                    ? "BONUS THROW EARNED"
-                                    : "SPACES TO MOVE",
-                                )}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                        {!rolling && (
-                          <span className="throw-card-hint">
-                            {t(
-                              myTurn && game.roll !== null
-                                ? "Choose your pawn"
-                                : "The game is on",
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ) : null
-                }
               />
             </div>
             {game?.phase === "playing" && (
@@ -1971,106 +1885,15 @@ function GameScreen() {
       {game &&
         (game.phase === "playing" || (focused && game.phase === "finished")) &&
         !modal && (
-          <div className="mobile-turn-bar">
-            {moment ? (
-              <div className="moment-inline" role="status">
-                <span className="moment-mark" aria-hidden="true">
-                  ✳
-                </span>
-                <div>
-                  <strong>{t(momentCopy(moment.kind).title)}</strong>
-                  <small>{t(momentCopy(moment.kind).note)}</small>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <span
-                  className="result-dot"
-                  style={{ background: COLORS[game.players[game.turn].color] }}
-                />
-                <strong>
-                  {t(
-                    game.phase === "finished"
-                      ? "A game well played."
-                      : myTurn
-                        ? "Your turn"
-                        : `${game.players[game.turn].name}’s turn`,
-                  )}
-                </strong>
-                {(pawnMoving || rolling || (myTurn && game.roll !== null)) && (
-                  <small>
-                    {t(
-                      pawnMoving
-                        ? "Moving pawn…"
-                        : rolling
-                          ? "Tossing…"
-                          : game.roll !== null
-                            ? moveLabel(game.roll)
-                            : "",
-                    )}
-                  </small>
-                )}
-              </div>
-            )}
-            {game.phase === "finished" ? (
-              <button
-                className="primary-button"
-                disabled={pawnMoving}
-                onClick={() => {
-                  exitFocus();
-                  requestAnimationFrame(() =>
-                    rootRef.current
-                      ?.querySelector(".game-panel")
-                      ?.scrollIntoView({ block: "start", behavior: "instant" }),
-                  );
-                }}
-              >
-                {t("View results")}
-                <ArrowRight size={16} />
-              </button>
-            ) : myTurn && game.roll !== null && advanced ? (
-              <div className="advanced-turn">
-                <span className="roll-value" aria-label={t("Your throw")}>
-                  {game.roll}
-                </span>
-                <strong>{t("Select a pawn on the board.")}</strong>
-              </div>
-            ) : myTurn && game.roll !== null ? (
-              <div className="mobile-pawns">
-                {legalMoves(game).map((p) => (
-                  <button
-                    key={p}
-                    disabled={!playable}
-                    onClick={() => void move(p)}
-                    aria-label={t(`Move pawn ${p + 1}`)}
-                  >
-                    <span
-                      style={{
-                        background: COLORS[game.players[game.turn].color],
-                      }}
-                    >
-                      {p + 1}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <ThrowButton
-                disabled={!playable || game.roll !== null}
-                rolling={rolling}
-                onClick={() => void roll()}
-                label={
-                  pawnMoving
-                    ? "Moving pawn…"
-                    : rolling
-                      ? "Tossing…"
-                      : myTurn
-                        ? "Throw cowries"
-                        : "Waiting…"
-                }
-              />
-            )}
-          </div>
+          <GameplayDock
+            game={game}
+            myTurn={myTurn}
+            playable={playable}
+            throwing={throwing}
+            moment={moment}
+            onThrow={() => void roll()}
+            onResults={exitFocus}
+          />
         )}
       <KeyboardThrow
         enabled={playable && game?.roll === null && !modal}

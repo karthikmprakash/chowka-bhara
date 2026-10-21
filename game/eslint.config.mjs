@@ -14,6 +14,16 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
   ]),
   {
+    // React Compiler rules landed after this app was written. These two flag
+    // patterns the code relies on (refs read by async handlers, device
+    // preferences hydrated after mount), so they report as warnings until the
+    // patterns are refactored. Everything else stays an error.
+    rules: {
+      "react-hooks/refs": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
+  {
     files: ["components/ui/**/*.{ts,tsx}", "hooks/use-mobile.ts"],
     rules: {
       // These files are vendored verbatim from shadcn@4.17.0. Keep the

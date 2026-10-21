@@ -22,7 +22,9 @@ export function RouteGuide({
     unlocked = gateOpen(g, g.turn);
   const outer = path.slice(0, boundary),
     inner = path.slice(boundary - 1),
-    active = unlocked ? path : outer;
+    // The marker follows the road all the way to the centre; the gate is a
+    // rule, shown by the lock on the square, not a gap in the route.
+    active = path;
   const marker = `guide-arrow-${p.color}`;
   return (
     <svg

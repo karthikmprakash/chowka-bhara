@@ -341,21 +341,6 @@ input {
   width: 60%;
   height: 60%;
 }
-.board-throw-card {
-  min-width: 245px;
-  padding: 26px;
-  border-radius: 22px;
-}
-.board-throw-card > .overline,
-.throw-card-hint {
-  font-size: 14px;
-}
-.board-throw-score > strong {
-  font-size: 64px;
-}
-.board-throw-score > span {
-  font-size: 13px;
-}
 .throw-tray {
   min-height: 190px;
   padding: 24px 14px;

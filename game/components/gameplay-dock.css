@@ -1,0 +1,394 @@
+/* The game's one footer, and its throw control.
+   A cup of cowries on the edge of the table: raised and terracotta while the
+   cowries are yours, settling into a quiet record once they are down. */
+.app-shell.is-focused.has-gameplay-dock > main {
+  padding-bottom: 0;
+}
+.gameplay-dock {
+  display: none;
+}
+.is-focused > .gameplay-dock {
+  display: block;
+  position: relative;
+  flex: 0 0 auto;
+  z-index: 25;
+  padding: 0 max(12px, var(--inset-right)) max(10px, var(--inset-bottom))
+    max(12px, var(--inset-left));
+  border-top: 2px solid var(--turn-color, var(--line));
+  background: var(--panel);
+  transition: border-color 200ms ease;
+}
+/* The ready key is its own object: no turn tint on top of terracotta. */
+.gameplay-dock.is-ready {
+  border-top-color: #1e3329;
+}
+.gameplay-dock-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 96px;
+}
+
+/* ------------------------------------------------------------------ tray */
+.cowrie-tray {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  margin: 7px 0;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+.tray-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+.tray-owner {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 130px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tray-owner.is-you {
+  color: var(--ink);
+}
+.tray-shells {
+  flex: 0 0 auto;
+  display: block;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--table) 60%, var(--panel));
+  box-shadow: inset 0 1px 3px #263b2d12;
+  transition:
+    background 200ms ease,
+    box-shadow 200ms ease;
+}
+.cowrie-tray .cowries {
+  gap: 7px;
+  min-height: 40px;
+}
+.cowrie-tray .cowrie {
+  width: 24px;
+  height: 36px;
+}
+.cowrie-tray .cowries:has(.cowrie:nth-child(6)) {
+  gap: 5px;
+}
+.cowrie-tray .cowries:has(.cowrie:nth-child(6)) .cowrie {
+  width: 21px;
+  height: 32px;
+}
+
+/* ------------------------------------------------------------ the throw key
+   Deep ink-green against a cream well, so the warm cowries are the only warm
+   thing in the bar. Raised, with a physical press. */
+.cowrie-tray.is-ready,
+.cowrie-tray.is-tossing {
+  justify-content: center;
+  gap: 14px;
+  border-color: #1e3329;
+  background: linear-gradient(180deg, #3a6353 0%, #2d5142 100%);
+  color: #fbf8ee;
+  box-shadow:
+    inset 0 1px 0 #ffffff30,
+    0 3px 0 #1b2f26,
+    0 8px 20px #1b2f261f;
+}
+.cowrie-tray.is-ready {
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    transform 130ms var(--ease-game),
+    box-shadow 130ms var(--ease-game),
+    background 200ms ease;
+}
+.cowrie-tray.is-ready:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 2px 6px #4a1d0f66,
+    inset 0 -1px 0 #ffffff14,
+    0 0 0 #7c3222;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cowrie-tray.is-ready:hover {
+    background: linear-gradient(180deg, #43705e 0%, #345a49 100%);
+  }
+}
+/* A cream well, not a dark one: the shells sit in light, the key stays dark. */
+.cowrie-tray.is-ready .tray-shells,
+.cowrie-tray.is-tossing .tray-shells {
+  padding: 7px 9px;
+  background: linear-gradient(180deg, #fbf7ea 0%, #f2ecd9 100%);
+  box-shadow:
+    inset 0 2px 5px #2f35241f,
+    inset 0 -1px 0 #ffffffcc,
+    0 1px 0 #1e3329;
+}
+.cowrie-tray .tray-cta {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+  color: #fbf8ee;
+  white-space: nowrap;
+}
+.cowrie-tray.is-tossing {
+  cursor: default;
+}
+.cowrie-tray.is-tossing .tray-cta {
+  color: #fbf8eea6;
+}
+.tray-state {
+  margin-left: auto;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.tray-state > strong {
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  animation: score-land 280ms var(--ease-game) both;
+}
+@keyframes score-land {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.86);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.tray-state > span {
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--muted);
+  max-width: 92px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tray-state > span.is-moment {
+  color: var(--accent);
+  font-weight: 600;
+}
+.tray-state > .tray-cta.is-quiet {
+  font-size: 14px;
+  color: var(--muted);
+}
+/* The shells land where they settle: a short, single bounce. */
+.cowrie-tray.is-live .tray-shells .cowrie {
+  animation: shell-land 280ms var(--ease-game) both;
+  animation-delay: calc(var(--shell-i) * 18ms);
+}
+@keyframes shell-land {
+  0% {
+    transform: rotate(var(--angle)) translateY(-6px) scale(1.06);
+  }
+  55% {
+    transform: rotate(var(--angle)) translateY(1px) scale(0.99);
+  }
+  100% {
+    transform: rotate(var(--angle)) translateY(0) scale(1);
+  }
+}
+/* Before the first throw the tray is an outline of what is to come. */
+.cowrie-tray.is-waiting .cowrie {
+  background: transparent;
+  border: 1px dashed var(--muted);
+  box-shadow: none;
+  opacity: 0.45;
+}
+.cowrie-tray.is-waiting .cowrie::before,
+.cowrie-tray.is-waiting .cowrie::after,
+.cowrie-tray.is-waiting .cowrie i {
+  display: none;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.dock-action {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+}
+.gameplay-dock .dock-results {
+  min-width: 148px;
+  min-height: 52px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  display: flex;
+  justify-content: center;
+  font-size: 16px;
+}
+@media (min-width: 701px) {
+  .cowrie-tray .cowrie {
+    width: 28px;
+    height: 42px;
+  }
+  .cowrie-tray .cowries:has(.cowrie:nth-child(6)) .cowrie {
+    width: 24px;
+    height: 36px;
+  }
+  .cowrie-tray .tray-cta {
+    font-size: 19px;
+  }
+  .tray-state > strong {
+    font-size: 40px;
+  }
+  .tray-owner {
+    max-width: 220px;
+    font-size: 16px;
+  }
+}
+@media (max-width: 700px) {
+  .app-shell.has-gameplay-dock:not(.is-focused) > main {
+    padding-bottom: calc(112px + var(--inset-bottom));
+  }
+  .app-shell.has-gameplay-dock:not(.is-focused) > .gameplay-dock {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 25;
+    padding: 0 max(10px, var(--inset-right)) max(8px, var(--inset-bottom))
+      max(10px, var(--inset-left));
+    border-top: 2px solid var(--turn-color, var(--line));
+    background: var(--panel);
+  }
+  .gameplay-dock-inner {
+    min-height: 92px;
+    gap: 8px;
+  }
+  .cowrie-tray {
+    gap: 9px;
+    padding: 8px 12px;
+  }
+  .cowrie-tray.is-ready,
+  .cowrie-tray.is-tossing {
+    gap: 12px;
+  }
+  .tray-owner {
+    max-width: 58px;
+    font-size: 14px;
+  }
+  .tray-shells {
+    padding: 7px 8px;
+  }
+  .cowrie-tray .cowrie {
+    width: 21px;
+    height: 32px;
+  }
+  .cowrie-tray .cowries:has(.cowrie:nth-child(6)) {
+    gap: 3px;
+  }
+  .cowrie-tray .cowries:has(.cowrie:nth-child(6)) .cowrie {
+    width: 18px;
+    height: 27px;
+  }
+  .cowrie-tray .tray-cta {
+    font-size: 16px;
+  }
+  .tray-state > strong {
+    font-size: 30px;
+  }
+  .tray-state > span {
+    max-width: 74px;
+    font-size: 10.5px;
+  }
+  .gameplay-dock .dock-results {
+    min-width: 128px;
+    min-height: 54px;
+    padding: 12px;
+    font-size: 15px;
+  }
+}
+@media (max-width: 380px) {
+  .gameplay-dock-inner {
+    min-height: 86px;
+    gap: 6px;
+  }
+  .cowrie-tray {
+    gap: 7px;
+    padding: 7px 9px;
+  }
+  .tray-owner {
+    max-width: 46px;
+    font-size: 13px;
+  }
+  .tray-shells {
+    padding: 6px 6px;
+  }
+  .cowrie-tray .cowrie {
+    width: 18px;
+    height: 27px;
+  }
+  .cowrie-tray .cowries:has(.cowrie:nth-child(6)) .cowrie {
+    width: 15px;
+    height: 23px;
+  }
+  .cowrie-tray .tray-cta {
+    font-size: 15px;
+  }
+  .tray-state > strong {
+    font-size: 27px;
+  }
+}
+/* Short landscape screens lose height, not the cowries. */
+@media (max-height: 550px) and (orientation: landscape) {
+  .gameplay-dock-inner {
+    min-height: 74px;
+  }
+  .cowrie-tray .cowrie {
+    width: 18px;
+    height: 28px;
+  }
+  .tray-state > strong {
+    font-size: 26px;
+  }
+  .gameplay-dock .dock-results {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cowrie-tray,
+  .cowrie-tray.is-ready,
+  .tray-shells,
+  .tray-state > strong,
+  .cowrie-tray.is-live .tray-shells .cowrie {
+    transition: none;
+    animation: none;
+  }
+}
